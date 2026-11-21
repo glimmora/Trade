@@ -1,0 +1,292 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      core: ${{ steps.filter.outputs.core }}
+      indicators: ${{ steps.filter.outputs.indicators }}
+      drawings: ${{ steps.filter.outputs.drawings }}
+      providers: ${{ steps.filter.outputs.providers }}
+      proxy: ${{ steps.filter.outputs.proxy }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
+            core:
+              - 'packages/core/**'
+            indicators:
+              - 'packages/indicators/**'
+            drawings:
+              - 'packages/drawings/**'
+            providers:
+              - 'packages/providers/**'
+            proxy:
+              - 'workers/proxy/**'
+            e2e:
+              - 'e2e/**'
+              - 'apps/web/**'
+
+  setup:
+    name: Install (shared)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      # NOTE: pnpm-lock.yaml is committed once generated (first `pnpm install`
+      # by the operator); until then this step fails loudly rather than
+      # silently drifting dependency versions.
+      - run: pnpm install --frozen-lockfile
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+      - name: Upload workspace for downstream jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: |
+            .
+            !.git/**
+            !**/node_modules/**
+          retention-days: 1
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: [changes, setup]
+    if: needs.changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md,yml,yaml}"
+      - run: pnpm typecheck
+
+  gitleaks:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    needs: [changes, setup]
+    if: >
+      needs.changes.outputs.core == 'true' ||
+      needs.changes.outputs.indicators == 'true' ||
+      needs.changes.outputs.drawings == 'true' ||
+      needs.changes.outputs.providers == 'true' ||
+      needs.changes.outputs.proxy == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test -- --coverage
+      - name: Coverage gate (>= 85% on indicators & providers)
+        run: |
+          pnpm exec vitest run --coverage --coverage.thresholds.lines=85 \
+            packages/indicators packages/providers || true
+          echo "Coverage gate is advisory in M1; hard gate lands with M4/M2 logic."
+
+  build:
+    name: Build + bundle budget
+    runs-on: ubuntu-latest
+    needs: [changes, setup]
+    if: needs.changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Bundle-size budget (initial JS <= 250 KB gz)
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const { gzipSync } = require('zlib');
+            const dir = 'apps/web/dist/assets';
+            let total = 0;
+            for (const f of fs.readdirSync(dir)) {
+              if (!f.endsWith('.js')) continue;
+              const gz = gzipSync(fs.readFileSync(path.join(dir, f))).length;
+              console.log(f, (gz / 1024).toFixed(1) + ' KB gz');
+              total += gz;
+            }
+            console.log('Total JS gz: ' + (total / 1024).toFixed(1) + ' KB');
+            if (total > 250 * 1024) { console.error('Bundle budget exceeded'); process.exit(1); }
+          "
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+          retention-days: 7
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [changes, build]
+    if: needs.changes.outputs.e2e == 'true' || needs.changes.outputs.web == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - name: Run Playwright shard ${{ matrix.shard }}/3
+        run: pnpm --filter @trade/e2e test -- --shard=${{ matrix.shard }}/3
+      - name: Upload traces/videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+
+  live-smoke:
+    name: Live-data smoke (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Ping one public ticker endpoint
+        run: |
+          curl -fsS --max-time 15 "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT" \
+            || echo "Live smoke failed (non-blocking)"
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: needs.changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - name: Serve preview
+        run: pnpm dlx serve -l 4173 apps/web/dist &
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:4173/
+          budgetPath: ./.github/lighthouse-budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  summary:
+    name: Pipeline summary
+    runs-on: ubuntu-latest
+    needs: [lint, unit, build, e2e, lighthouse]
+    if: always()
+    steps:
+      - name: Report timings
+        run: |
+          echo "## CI summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- lint: ${{ needs.lint.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- unit: ${{ needs.unit.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- build: ${{ needs.build.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- e2e: ${{ needs.e2e.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- lighthouse: ${{ needs.lighthouse.result }}" >> "$GITHUB_STEP_SUMMARY"

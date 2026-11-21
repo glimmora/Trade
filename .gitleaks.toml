@@ -1,0 +1,30 @@
+# Fail the build on anything that looks like a leaked secret.
+# No allow-list entries: no secret-like value may ever be committed.
+title = "Trade gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "github-pat"
+description = "GitHub personal access token"
+regex = '''ghp_[A-Za-z0-9]{20,}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth token"
+regex = '''gho_[A-Za-z0-9]{20,}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub fine-grained personal access token"
+regex = '''github_pat_[A-Za-z0-9_]{20,}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "generic-api-key-assignment"
+description = "Suspicious key/token assignment in source"
+regex = '''(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['"][A-Za-z0-9_\-]{16,}['"]'''
+tags = ["key", "generic"]

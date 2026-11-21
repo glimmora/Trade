@@ -1,0 +1,17 @@
+Trade — Charting Terminal
+
+Copyright 2026 Trade contributors
+
+This product includes software developed by the Apache Software
+Foundation and third-party open-source components under their
+respective licenses.
+
+Charting engine attribution
+---------------------------
+This product includes Lightweight Charts, an open-source charting
+library licensed under the Apache License, Version 2.0.
+Copyright (c) TradingView, Inc.
+See https://github.com/tradingview/lightweight-charts for the
+original source and license. The required Apache-2.0 attribution
+for Lightweight Charts is preserved in the built bundle and in
+this NOTICE file, as the license requires.

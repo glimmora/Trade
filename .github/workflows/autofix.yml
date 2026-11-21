@@ -1,0 +1,79 @@
+name: Autofix
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: autofix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  autofix:
+    name: Lint/format autofix
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'push'
+    steps:
+      - name: Loop guard — at most one autofix per SHA
+        id: guard
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          COUNT=$(gh api "search/issues?q=repo:${{ github.repository }}+autofix+${SHA}" \
+            --jq '.total_count' 2>/dev/null || echo 0)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.count == '0'
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        if: steps.guard.outputs.count == '0'
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.count == '0'
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        if: steps.guard.outputs.count == '0'
+        run: pnpm install --frozen-lockfile
+      - name: Fix lint/format
+        if: steps.guard.outputs.count == '0'
+        run: |
+          pnpm exec eslint --fix "apps/**/*.{ts,tsx}" "packages/*/src/**/*.ts" "workers/*/src/**/*.ts" || true
+          pnpm exec prettier --write "**/*.{ts,tsx,js,jsx,json,css,md,yml,yaml}" || true
+      - name: Commit fix back to main
+        if: steps.guard.outputs.count == '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to fix."
+            exit 0
+          fi
+          git commit -m "fix: autofix lint/format for ${{ github.event.workflow_run.head_sha }} [skip ci]"
+          git push origin main
+      - name: Open issue for failing tests
+        if: steps.guard.outputs.count == '0'
+        run: |
+          gh issue create \
+            --title "CI failure needs agent: ${{ github.event.workflow_run.head_sha }}" \
+            --label "needs-agent" \
+            --body "CI run failed: ${{ github.event.workflow_run.html_url }}
+            Autofix for lint/format was attempted (if applicable).
+            A subagent should read the logs, patch, and push a fix."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

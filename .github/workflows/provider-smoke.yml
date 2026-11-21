@@ -1,0 +1,61 @@
+name: Provider smoke test
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    name: Ping provider endpoints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Ping public endpoints
+        id: ping
+        run: |
+          : > provider-status.md
+          echo "# Provider status — $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> provider-status.md
+          check() {
+            local name="$1" url="$2"
+            if curl -fsS --max-time 15 "$url" -o /dev/null; then
+              echo "- ✅ $name — alive" >> provider-status.md
+            else
+              echo "- ❌ $name — FAILED ($url)" >> provider-status.md
+              echo "failed=1" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          check "Binance BTCUSDT" "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+          check "Binance XAUTUSDT" "https://api.binance.com/api/v3/ticker/price?symbol=XAUTUSDT"
+          check "Bybit BTCUSDT" "https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT"
+          check "OKX BTC-USDT" "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT"
+          check "Kraken XBT/USDT" "https://api.kraken.com/0/public/Ticker?pair=XBTUSDT"
+          check "Coinbase BTC-USD" "https://api.exchange.coinbase.com/products/BTC-USD/ticker"
+          check "Gate BTC_USDT" "https://api.gateio.ws/api/v4/spot/tickers?currency_pair=BTC_USDT"
+          check "Yahoo Finance gold" "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?range=1d&interval=1d"
+          check "Stooq gold" "https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=csv"
+          cat provider-status.md
+      - name: Upload status report
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-status-${{ github.run_id }}
+          path: provider-status.md
+          retention-days: 30
+      - name: Open/update issue on breakage
+        if: steps.ping.outputs.failed == '1'
+        run: |
+          BODY="$(cat provider-status.md)"
+          EXISTING=$(gh issue list --state open --label provider-outage --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "Provider outage detected" --label "provider-outage" --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
