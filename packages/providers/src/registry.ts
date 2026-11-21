@@ -4,9 +4,8 @@ import { TIMEFRAMES } from '@trade/core';
 /**
  * Provider symbol registry.
  *
- * This is the authoritative mapping for the providers package. It extends
- * the core symbol list with PAXG/USDT (a gold proxy) and with per-provider
- * verification flags.
+ * This is the authoritative mapping for the providers package. It mirrors
+ * the core symbol list and adds per-provider verification flags.
  *
  * INSTRUMENT IDENTITY — READ FIRST:
  * - "XAU/USD" is SPOT GOLD. Twelve Data serves true spot gold here, and
@@ -18,6 +17,12 @@ import { TIMEFRAMES } from '@trade/core';
  * - "XAUT/USDT" is TOKENIZED GOLD (Tether Gold), a different instrument
  *   from spot gold. Never substitute one for the other.
  * - "PAXG/USDT" is TOKENIZED GOLD (Pax Gold), a gold proxy, not spot gold.
+ * - CoinGecko serves TOKENIZED GOLD only (PAXG/XAUT), with automatic
+ *   coarse granularity (30m candles for days=1, 4h for days=2-30) —
+ *   never spot gold.
+ * - TradingView Scanner serves a live quote snapshot (OANDA:XAUUSD)
+ *   for spot gold — ticker only, no candles. It is a fallback quote
+ *   source, never a chart source.
  * - "BTC/USDT" on Coinbase is served as BTC-USD (US dollars, not Tether);
  *   it is a BTC price reference, labelled as such in the UI.
  * - Bybit "XAUUSDT" is a PERPETUAL contract, listed only as a live proxy
@@ -91,18 +96,19 @@ export const REGISTRY_SYMBOLS: readonly RegistrySymbol[] = [
     tickSize: 0.01,
     volumeUnit: 'troy ounces (where reported; often 0 for spot FX feeds)',
     providers: {
-      oanda: {
-        providerSymbol: 'XAU_USD',
-        verified: false,
-        note: 'Instrument name XAU_USD is unconfirmed — verified at runtime via the account instruments endpoint before use.',
-      },
-      twelvedata: { providerSymbol: 'XAU/USD', verified: true },
+      // Yahoo (GC=F gold futures) is first: the keyless default for XAU/USD.
       yahoo: {
         providerSymbol: 'GC=F',
         verified: true,
         proxy: true,
         note: 'Gold futures (GC=F), proxy for spot gold — not spot itself.',
       },
+      oanda: {
+        providerSymbol: 'XAU_USD',
+        verified: false,
+        note: 'Instrument name XAU_USD is unconfirmed — verified at runtime via the account instruments endpoint before use.',
+      },
+      twelvedata: { providerSymbol: 'XAU/USD', verified: true },
       stooq: {
         providerSymbol: 'xauusd',
         verified: true,
@@ -114,6 +120,11 @@ export const REGISTRY_SYMBOLS: readonly RegistrySymbol[] = [
         verified: false,
         proxy: true,
         note: 'Perpetual contract (XAUUSDT) — live proxy, not spot. Confirm via instruments-info before use.',
+      },
+      tradingview: {
+        providerSymbol: 'OANDA:XAUUSD',
+        verified: true,
+        note: 'Live quote snapshot only — no candles; ticker fallback, never a chart source.',
       },
     },
   },
@@ -130,6 +141,12 @@ export const REGISTRY_SYMBOLS: readonly RegistrySymbol[] = [
       okx: { providerSymbol: 'XAUT-USDT', verified: true },
       kraken: { providerSymbol: 'XAUT/USD', verified: true },
       gate: { providerSymbol: 'XAUT_USDT', verified: true },
+      // After the crypto exchanges: exchange granularity is better.
+      coingecko: {
+        providerSymbol: 'tether-gold',
+        verified: true,
+        note: 'Tokenized gold via CoinGecko — 30m/4h candles only (automatic granularity), never spot gold.',
+      },
     },
   },
   {
@@ -149,6 +166,12 @@ export const REGISTRY_SYMBOLS: readonly RegistrySymbol[] = [
         verified: false,
         note: 'Not confirmed in the Bybit spot list at implementation time — confirm before use.',
       },
+      // After the crypto exchanges: exchange granularity is better.
+      coingecko: {
+        providerSymbol: 'pax-gold',
+        verified: true,
+        note: 'Tokenized gold via CoinGecko — 30m/4h candles only (automatic granularity), never spot gold.',
+      },
     },
   },
 ] as const;
@@ -166,6 +189,10 @@ export const PROVIDER_TIMEFRAMES: Record<ProviderId, readonly Timeframe[]> = {
   oanda: TIMEFRAMES.filter((tf) => tf !== '3m'),
   yahoo: ['1m', '5m', '15m', '30m', '1h', '1D', '1W', '1M'],
   stooq: ['1D'],
+  // All app timeframes map to a CoinGecko days window (30m/4h candles).
+  coingecko: TIMEFRAMES,
+  // Quote snapshot only — no candles at any timeframe.
+  tradingview: [],
 };
 
 export function getRegistrySymbol(id: string): RegistrySymbol | undefined {

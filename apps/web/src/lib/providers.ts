@@ -87,6 +87,15 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
     delayed: false,
   },
   {
+    id: 'yahoo',
+    label: 'Yahoo (Gold futures GC=F)',
+    // Native intervals only: 3m, 2h, 4h, 6h, 12h are disabled in the UI.
+    timeframes: ['1m', '5m', '15m', '30m', '1h', '1D', '1W', '1M'],
+    note: null,
+    requiresKey: false,
+    delayed: false,
+  },
+  {
     id: 'twelvedata',
     label: 'Twelve Data',
     // Registry serves 10 timeframes (no 3m/6h/12h).
@@ -94,14 +103,6 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
     note: 'requiresApiKey',
     requiresKey: true,
     delayed: false,
-  },
-  {
-    id: 'yahoo',
-    label: 'Yahoo Finance',
-    timeframes: ['1m', '5m', '15m', '30m', '1h', '1D', '1W', '1M'],
-    note: 'delayedData',
-    requiresKey: false,
-    delayed: true,
   },
   {
     id: 'stooq',
@@ -119,6 +120,24 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
     timeframes: ALL_TIMEFRAMES.filter((tf) => tf !== '3m'),
     note: 'requiresApiKey',
     requiresKey: true,
+    delayed: false,
+  },
+  {
+    id: 'coingecko',
+    label: 'CoinGecko',
+    // Tokenized gold only (PAXG/XAUT) — 30m/4h candles, automatic granularity.
+    timeframes: ALL_TIMEFRAMES,
+    note: null,
+    requiresKey: false,
+    delayed: false,
+  },
+  {
+    id: 'tradingview',
+    label: 'TradingView Scanner (quote only)',
+    // Quote snapshot only — no candles at any timeframe.
+    timeframes: [],
+    note: null,
+    requiresKey: false,
     delayed: false,
   },
 ] as const;

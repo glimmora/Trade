@@ -1,11 +1,13 @@
 import { BinanceAdapter } from './binance';
 import { BybitAdapter } from './bybit';
 import { CoinbaseAdapter } from './coinbase';
+import { CoinGeckoAdapter } from './coingecko';
 import { GateAdapter } from './gate';
 import { KrakenAdapter } from './kraken';
 import { OandaAdapter } from './oanda';
 import { OkxAdapter } from './okx';
 import { StooqAdapter } from './stooq';
+import { TradingViewScannerAdapter } from './tradingview';
 import { TwelveDataAdapter } from './twelvedata';
 import { YahooAdapter } from './yahoo';
 import { providersForSymbol } from '../registry';
@@ -15,11 +17,13 @@ import type { ProviderId } from '@trade/core';
 export { BinanceAdapter } from './binance';
 export { BybitAdapter } from './bybit';
 export { CoinbaseAdapter } from './coinbase';
+export { CoinGeckoAdapter } from './coingecko';
 export { GateAdapter } from './gate';
 export { KrakenAdapter } from './kraken';
 export { OandaAdapter } from './oanda';
 export { OkxAdapter } from './okx';
 export { StooqAdapter } from './stooq';
+export { TradingViewScannerAdapter } from './tradingview';
 export { TwelveDataAdapter } from './twelvedata';
 export { YahooAdapter } from './yahoo';
 export { parseBinanceKlines } from './binance';
@@ -32,6 +36,8 @@ export { parseTwelveDataCandles } from './twelvedata';
 export { parseOandaCandles } from './oanda';
 export { parseYahooChart } from './yahoo';
 export { parseStooqCsv } from './stooq';
+export { parseCoinGeckoOhlc } from './coingecko';
+export { parseTradingViewSymbol } from './tradingview';
 
 export type AdapterFactory = (options?: ProviderClientOptions) => ProviderAdapter;
 
@@ -46,6 +52,8 @@ export const ADAPTER_FACTORIES: Record<ProviderId, AdapterFactory> = {
   oanda: (options) => new OandaAdapter(options),
   yahoo: (options) => new YahooAdapter(options),
   stooq: (options) => new StooqAdapter(options),
+  coingecko: (options) => new CoinGeckoAdapter(options),
+  tradingview: (options) => new TradingViewScannerAdapter(options),
 };
 
 export function createAdapter(

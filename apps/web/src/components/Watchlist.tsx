@@ -13,9 +13,10 @@ const OANDA_ACCOUNT_ID_STORAGE_KEY = 'trade:oanda-account-id';
 /**
  * Providers whose tickers can only be reached via the proxy worker, which
  * is not deployed — their browser requests would fail on CORS, so they are
- * never used here.
+ * never used here. Yahoo is not listed: it goes through the same-origin
+ * Vercel function at /api/yahoo.
  */
-const PROXY_ONLY_PROVIDERS: readonly ProviderId[] = ['yahoo', 'stooq'];
+const PROXY_ONLY_PROVIDERS: readonly ProviderId[] = ['stooq'];
 
 interface RowPlan {
   provider: ProviderId;
@@ -61,8 +62,9 @@ function readOandaAccountId(): string | undefined {
  * First verified provider for a symbol that can serve a ticker from the
  * browser without a user key. Twelve Data is used only when its key is
  * stored; OANDA is used only when its token is stored; proxy-only
- * providers are skipped outright. Returns null when no provider
- * qualifies — that row stays '—' rather than showing a fake price.
+ * providers are skipped outright. Yahoo is keyless and served by the
+ * same-origin /api/yahoo function, so it qualifies. Returns null when no
+ * provider qualifies — that row stays '—' rather than showing a fake price.
  */
 function resolveRowPlan(symbolId: string): RowPlan | null {
   const key = readTwelveDataKey();

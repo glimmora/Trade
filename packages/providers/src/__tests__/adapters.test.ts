@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBinanceKlines } from '../adapters/binance';
+import { BinanceAdapter, parseBinanceKlines } from '../adapters/binance';
 import { parseBybitKlines } from '../adapters/bybit';
 import { parseCoinbaseCandles } from '../adapters/coinbase';
 import { parseGateCandles } from '../adapters/gate';
@@ -30,20 +30,20 @@ describe('adapter response parsing (recorded fixtures, no network)', () => {
   it('Binance: ascending, aligned, 3 candles', () => {
     const candles = parseBinanceKlines(binanceFixture, '1h', SERVER_NOW_MS);
     expect(candles).toHaveLength(3);
-    expect(candles.map((c) => c.time)).toEqual([1763721600, 1763725200, 1763728800]);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
     expect(candles[0]?.close).toBe(96480);
     expect(candles[2]?.volume).toBeCloseTo(11.111, 3);
   });
 
   it('Bybit: reverses newest-first list into ascending order', () => {
     const candles = parseBybitKlines(bybitFixture, '1h', SERVER_NOW_MS);
-    expect(candles.map((c) => c.time)).toEqual([1763721600, 1763725200, 1763728800]);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
     expect(candles[2]?.close).toBe(96650);
   });
 
   it('OKX: reverses newest-first rows into ascending order', () => {
     const candles = parseOkxCandles(okxFixture, '1h', SERVER_NOW_MS);
-    expect(candles.map((c) => c.time)).toEqual([1763721600, 1763725200, 1763728800]);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
     expect(candles[0]?.open).toBe(96412.5);
   });
 
@@ -55,7 +55,7 @@ describe('adapter response parsing (recorded fixtures, no network)', () => {
 
   it('Coinbase: reorders [time, low, high, open, close, volume] correctly', () => {
     const candles = parseCoinbaseCandles(coinbaseFixture, '1h', SERVER_NOW_MS);
-    expect(candles.map((c) => c.time)).toEqual([1763721600, 1763725200, 1763728800]);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
     expect(candles[0]?.open).toBe(96412.5);
     expect(candles[0]?.high).toBe(96500);
     expect(candles[0]?.low).toBe(96380.1);
@@ -63,7 +63,7 @@ describe('adapter response parsing (recorded fixtures, no network)', () => {
 
   it('Gate.io: reorders [ts, volume, close, high, low, open] correctly', () => {
     const candles = parseGateCandles(gateFixture, '1h', SERVER_NOW_MS);
-    expect(candles.map((c) => c.time)).toEqual([1763721600, 1763725200, 1763728800]);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
     expect(candles[2]?.open).toBe(96590.3);
     expect(candles[2]?.close).toBe(96650);
   });
@@ -118,6 +118,15 @@ describe('adapter factory', () => {
     ).rejects.toThrow(/does not support timeframe/);
   });
 
+  it('Yahoo rejects unsupported timeframes instead of substituting', async () => {
+    const yahoo = createAdapter('yahoo');
+    for (const timeframe of ['3m', '2h', '4h', '6h', '12h'] as const) {
+      await expect(
+        yahoo.getCandles({ symbol: 'XAU/USD', timeframe }),
+      ).rejects.toThrow(/does not support timeframe/);
+    }
+  });
+
   it('adaptersForSymbol lists only providers that serve the symbol', () => {
     const btc = adaptersForSymbol('BTC/USDT').map((a) => a.id);
     expect(btc).toContain('binance');
@@ -131,5 +140,101 @@ describe('adapter factory', () => {
     const xaut = adaptersForSymbol('XAUT/USDT').map((a) => a.id);
     expect(xaut).toContain('binance');
     expect(xaut).not.toContain('twelvedata');
+    const paxg = adaptersForSymbol('PAXG/USDT').map((a) => a.id);
+    expect(paxg).toContain('binance');
+    expect(paxg).toContain('kraken');
+    expect(paxg).not.toContain('twelvedata');
+  });
+});
+
+type FetchStub = typeof fetch;
+
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** fetch stub: the primary host geo-blocks (451); the fallback host serves. */
+function geoBlockedFetch(calls: string[]): FetchStub {
+  const handler = async (input: string | URL | Request): Promise<Response> => {
+    const url = String(input);
+    calls.push(url);
+    if (url.startsWith('https://api.binance.com')) {
+      return jsonResponse(
+        { code: 0, msg: 'Service unavailable from a restricted location' },
+        451,
+      );
+    }
+    if (url.startsWith('https://data-api.binance.vision/api/v3/klines')) {
+      return jsonResponse(binanceFixture, 200);
+    }
+    if (url.startsWith('https://data-api.binance.vision/api/v3/time')) {
+      return jsonResponse({ serverTime: SERVER_NOW_MS }, 200);
+    }
+    if (url.startsWith('https://data-api.binance.vision/api/v3/ticker/price')) {
+      return jsonResponse({ symbol: 'BTCUSDT', price: '96480.00' }, 200);
+    }
+    return jsonResponse({ code: -1121, msg: 'Invalid symbol.' }, 400);
+  };
+  return handler as FetchStub;
+}
+
+/** fetch stub: every host geo-blocks (451). */
+function alwaysGeoBlockedFetch(calls: string[]): FetchStub {
+  const handler = async (input: string | URL | Request): Promise<Response> => {
+    calls.push(String(input));
+    return jsonResponse(
+      { code: 0, msg: 'Service unavailable from a restricted location' },
+      451,
+    );
+  };
+  return handler as FetchStub;
+}
+
+describe('Binance geo-restriction fallback (data-api.binance.vision)', () => {
+  it('retries klines on the fallback host when the primary host answers 451', async () => {
+    const calls: string[] = [];
+    const binance = new BinanceAdapter({ fetchFn: geoBlockedFetch(calls) });
+    const candles = await binance.getCandles({ symbol: 'BTC/USDT', timeframe: '1h' });
+    expect(candles).toHaveLength(3);
+    expect(candles.map((c) => c.time)).toEqual([1763719200, 1763722800, 1763726400]);
+    expect(
+      calls.some((url) => url.startsWith('https://data-api.binance.vision/api/v3/klines')),
+    ).toBe(true);
+    expect(
+      calls.some((url) => url.startsWith('https://data-api.binance.vision/api/v3/time')),
+    ).toBe(true);
+  });
+
+  it('retries the ticker on the fallback host when the primary host answers 451', async () => {
+    const calls: string[] = [];
+    const binance = new BinanceAdapter({ fetchFn: geoBlockedFetch(calls) });
+    const ticker = await binance.getTicker('BTC/USDT');
+    expect(ticker.price).toBe(96480);
+    expect(ticker.providerSymbol).toBe('BTCUSDT');
+    expect(
+      calls.some((url) =>
+        url.startsWith('https://data-api.binance.vision/api/v3/ticker/price'),
+      ),
+    ).toBe(true);
+  });
+
+  it('does not fall back when baseUrl is set explicitly', async () => {
+    const calls: string[] = [];
+    const binance = new BinanceAdapter({
+      baseUrl: 'https://api.binance.com',
+      fetchFn: geoBlockedFetch(calls),
+    });
+    await expect(binance.getTicker('BTC/USDT')).rejects.toThrow('HTTP 451 from api.binance.com');
+    expect(calls.some((url) => url.includes('data-api.binance.vision'))).toBe(false);
+  });
+
+  it('throws the original error when the fallback host also geo-blocks', async () => {
+    const calls: string[] = [];
+    const binance = new BinanceAdapter({ fetchFn: alwaysGeoBlockedFetch(calls) });
+    await expect(binance.getTicker('BTC/USDT')).rejects.toThrow('HTTP 451 from api.binance.com');
+    expect(calls).toHaveLength(2);
   });
 });

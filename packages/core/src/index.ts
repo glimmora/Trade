@@ -53,7 +53,9 @@ export type ProviderId =
   | 'twelvedata'
   | 'yahoo'
   | 'stooq'
-  | 'oanda';
+  | 'oanda'
+  | 'coingecko'
+  | 'tradingview';
 
 export const PROVIDER_IDS: readonly ProviderId[] = [
   'binance',
@@ -66,6 +68,8 @@ export const PROVIDER_IDS: readonly ProviderId[] = [
   'yahoo',
   'stooq',
   'oanda',
+  'coingecko',
+  'tradingview',
 ] as const;
 
 /** A tradeable symbol. Adding a symbol is a config-only change. */
@@ -103,8 +107,8 @@ export const SYMBOLS: readonly SymbolInfo[] = [
     kind: 'spot-gold',
     precision: 2,
     providerSymbols: {
-      twelvedata: 'XAU/USD',
       yahoo: 'GC=F',
+      twelvedata: 'XAU/USD',
       stooq: 'xauusd',
       oanda: 'XAU_USD',
     },
@@ -120,6 +124,22 @@ export const SYMBOLS: readonly SymbolInfo[] = [
       okx: 'XAUT-USDT',
       kraken: 'XAUT/USD',
       gate: 'XAUT_USDT',
+      coingecko: 'tether-gold',
+    },
+  },
+  {
+    id: 'PAXG/USDT',
+    label: 'Tokenized Gold (Pax Gold) / Tether',
+    kind: 'tokenized-gold',
+    precision: 2,
+    providerSymbols: {
+      binance: 'PAXGUSDT',
+      bybit: 'PAXGUSDT',
+      okx: 'PAXG-USDT',
+      // Kraken lists no PAXG/USDT pair — the pair is PAXG/USD.
+      kraken: 'PAXG/USD',
+      gate: 'PAXG_USDT',
+      coingecko: 'pax-gold',
     },
   },
 ] as const;

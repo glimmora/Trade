@@ -17,8 +17,9 @@ const TWELVE_DATA_KEY_STORAGE_KEY = 'trade:twelvedata-key';
 const OANDA_TOKEN_STORAGE_KEY = 'trade:oanda-token';
 const OANDA_ACCOUNT_ID_STORAGE_KEY = 'trade:oanda-account-id';
 const CANDLE_LIMIT = 500;
-/** Providers that need the proxy worker, which is not deployed. */
-const PROXY_DEPENDENT_PROVIDERS: readonly ProviderId[] = ['yahoo', 'stooq'];
+/** Providers that need the proxy worker, which is not deployed. Yahoo is not
+ * listed: it goes through the same-origin Vercel function at /api/yahoo. */
+const PROXY_DEPENDENT_PROVIDERS: readonly ProviderId[] = ['stooq'];
 
 interface EntrySnapshot {
   candles: readonly Candle[];
@@ -118,8 +119,9 @@ function adapterOptions(
 /**
  * The single fallback candidate: the next verified provider for the symbol
  * in registry order, excluding the failed one. Twelve Data is skipped when
- * no key is stored; OANDA is skipped when no token is stored; yahoo/stooq
- * are skipped (they need the proxy worker).
+ * no key is stored; OANDA is skipped when no token is stored; stooq is
+ * skipped (it needs the proxy worker). Yahoo is keyless and served by the
+ * same-origin /api/yahoo function, so it is an eligible fallback.
  */
 function fallbackCandidates(
   symbol: string,
