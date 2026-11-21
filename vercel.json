@@ -1,1 +1,1 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","buildCommand":"corepack pnpm build && cp -r apps/web/dist dist","framework":"vite","installCommand":"corepack enable && corepack prepare pnpm@9.12.0 --activate && corepack pnpm install","outputDirectory":"dist"}
+{"$schema":"https://openapi.vercel.sh/vercel.json","buildCommand":"corepack pnpm build && if [ -d apps/web/dist ]; then cp -r apps/web/dist dist; fi && test -d dist","framework":"vite","installCommand":"corepack enable && corepack prepare pnpm@9.12.0 --activate && corepack pnpm install","outputDirectory":"dist"}
