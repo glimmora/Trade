@@ -11,7 +11,7 @@ const GLOBAL_SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: 'S', action: 'Save chart as PNG' },
 ] as const;
 
-export function ShortcutsDialog({ onClose }: { onClose: () => void }): JSX.Element {
+export function ShortcutsDialog({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { translate } = useApp();
   const toolsWithShortcuts = DRAWING_TOOLS.filter((tool) => tool.shortcut !== null);
   return (

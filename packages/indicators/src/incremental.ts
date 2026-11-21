@@ -174,7 +174,7 @@ export function createVwapState(): VwapState {
 
 export function vwapUpdate(state: VwapState, candle: Candle): number {
   const d = new Date(candle.time * 1000);
-  const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+  const key = `${String(d.getUTCFullYear())}-${String(d.getUTCMonth())}-${String(d.getUTCDate())}`;
   if (key !== state.anchorKey) {
     state.anchorKey = key;
     state.cumPv = 0;

@@ -67,14 +67,14 @@ describe('hma / dema / tema', () => {
     expect(out.length).toBe(30);
     const last = out[29];
     expect(last).toBeDefined();
-    expect(last as number).toBeGreaterThan(120);
+    expect(last ?? Number.NaN).toBeGreaterThan(120);
   });
   it('dema and tema are defined and finite', () => {
     for (const fn of [dema, tema]) {
       const out = fn(values, 10);
       const last = out[29];
       expect(last).toBeDefined();
-      expect(Number.isFinite(last as number)).toBe(true);
+      expect(Number.isFinite(last ?? Number.NaN)).toBe(true);
     }
   });
 });

@@ -225,7 +225,7 @@ export function detectMarketStructure(
     .filter((e) => e.kind === 'BOS')
     .map((e) => ({
       ...e,
-      kind: (e.direction === 'bullish' ? 'RBS' : 'SBR') as StructureEvent['kind'],
+      kind: e.direction === 'bullish' ? 'RBS' : 'SBR',
     }));
   return { labels, trend, events: [...events, ...flips] };
 }

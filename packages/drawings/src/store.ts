@@ -75,14 +75,8 @@ export function updateDrawing(
   id: string,
   update: (obj: DrawingObject) => DrawingObject,
 ): DrawingState {
-  let changed = false;
-  const objects = state.objects.map((o) => {
-    if (o.id !== id) {
-      return o;
-    }
-    changed = true;
-    return withUpdatedAt(update(o));
-  });
+  const changed = state.objects.some((o) => o.id === id);
+  const objects = state.objects.map((o) => (o.id === id ? withUpdatedAt(update(o)) : o));
   return changed ? { ...state, objects } : state;
 }
 
@@ -233,7 +227,7 @@ export function sendToBack(state: DrawingState, id: string): DrawingState {
 }
 
 /** Remove all drawings and clear the selection. The UI confirms first. */
-export function clearAllDrawings(state: DrawingState): DrawingState {
+export function clearAllDrawings(_state: DrawingState): DrawingState {
   return { objects: [], selectedIds: [] };
 }
 

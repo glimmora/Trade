@@ -59,6 +59,11 @@ interface SharedEntry {
 
 const entries = new Map<string, SharedEntry>();
 
+/** Keys that already showed the offline toast, so one failed series never
+ * stacks the same warning once per chart panel or per view switch. Cleared
+ * when that series loads successfully. */
+const offlineToasted = new Set<string>();
+
 function entryKey(provider: ProviderId, symbol: string, timeframe: Timeframe): string {
   return `${provider}\n${symbol}\n${timeframe}`;
 }
@@ -178,14 +183,14 @@ async function loadEntry(entry: SharedEntry, callbacks: StoreCallbacks): Promise
       if (candles.length === 0) {
         throw new Error(`No candles returned by ${providerId}`);
       }
-      await adapter.subscribe(entry.symbol, entry.timeframe, (tick) =>
-        onTick(entry, tick, callbacks),
+      await adapter.subscribe(entry.symbol, entry.timeframe, (tick) => { onTick(entry, tick, callbacks); },
       );
       if (!isCurrent()) {
         await adapter.unsubscribe(entry.symbol, entry.timeframe).catch(() => undefined);
         return;
       }
       // Success: the whole series comes from this one provider only.
+      offlineToasted.delete(entry.key);
       entry.adapter = adapter;
       entry.candles = candles;
       entry.status = providerMeta(providerId).delayed ? 'delayed' : 'live';
@@ -211,7 +216,10 @@ async function loadEntry(entry: SharedEntry, callbacks: StoreCallbacks): Promise
   entry.status = 'offline';
   entry.error = 'Market data unavailable';
   callbacks.setConnection('offline');
-  callbacks.pushToast('Market data unavailable — check your connection and try again.', 'warning');
+  if (!offlineToasted.has(entry.key)) {
+    offlineToasted.add(entry.key);
+    callbacks.pushToast('Market data unavailable — check your connection and try again.', 'warning');
+  }
   notify(entry);
 }
 

@@ -403,7 +403,7 @@ export const GANN_FAN_SCALES: readonly (readonly [number, number])[] = [
 export function gannFanSegments(
   origin: PixelPoint,
   through: PixelPoint,
-): Array<readonly [PixelPoint, PixelPoint]> {
+): (readonly [PixelPoint, PixelPoint])[] {
   const vx = through.x - origin.x;
   const vy = through.y - origin.y;
   return GANN_FAN_SCALES.map(([sx, sy]) => {
@@ -420,7 +420,7 @@ export function gannFanSegments(
 export function fibFanSegments(
   origin: PixelPoint,
   far: PixelPoint,
-): Array<readonly [PixelPoint, PixelPoint, number]> {
+): (readonly [PixelPoint, PixelPoint, number])[] {
   return FIB_RETRACEMENT_RATIOS.map((ratio) => {
     const levelPoint: PixelPoint = {
       x: far.x,
@@ -1017,7 +1017,7 @@ export function getHandles(obj: DrawingObject, scale: ChartScale): Handle[] {
     return [];
   }
   const handles: Handle[] = obj.points.map((anchor, index) => ({
-    id: `${obj.id}:anchor:${index}`,
+    id: `${obj.id}:anchor:${String(index)}`,
     kind: 'anchor',
     anchorIndex: index,
     pixel: anchorToPixel(anchor, scale),

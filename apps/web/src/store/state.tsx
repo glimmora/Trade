@@ -327,7 +327,7 @@ export function useApp(): AppStore {
   return store;
 }
 
-export function AppProvider({ children }: { children: ReactNode }): JSX.Element {
+export function AppProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [state, setState] = useState<AppState>(loadState);
   const [connection, setConnection] = useState<ConnectionStatus>('connecting');
   const [lastPrice, setLastPriceState] = useState<number | null>(null);
@@ -362,7 +362,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
 
   const fireAlert = (alert: PriceAlert, price: number): void => {
     const current = stateRef.current;
-    const message = `${alert.symbol} crossed ${alert.condition === 'above' ? 'above' : 'below'} ${price}`;
+    const message = `${alert.symbol} crossed ${alert.condition === 'above' ? 'above' : 'below'} ${String(price)}`;
     pushToast(message, 'warning');
     if (current.soundEnabled) playAlertSound();
     if (current.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
@@ -413,7 +413,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       setSymbol: (symbol: string) => {
         setState((prev) => {
           const nextProvider =
-            prev.provider && SYMBOLS.find((entry) => entry.id === symbol)?.providerSymbols[prev.provider]
+            SYMBOLS.find((entry) => entry.id === symbol)?.providerSymbols[prev.provider]
               ? prev.provider
               : (firstProviderForSymbol(symbol) ?? prev.provider);
           return { ...prev, symbol, provider: nextProvider };

@@ -127,7 +127,7 @@ function emaOfDefined(values: readonly (number | undefined)[], period: number): 
   // tail, run ema(), then map back to original indices.
   const firstDefined = values.findIndex((v) => v !== undefined);
   if (firstDefined < 0) return undefinedSeries(values.length);
-  const compact = values.slice(firstDefined).map((v) => (v === undefined ? Number.NaN : v));
+  const compact = values.slice(firstDefined).map((v) => (v ?? Number.NaN));
   // Replace interior undefined with the last defined value (EMA holds).
   let last = compact[0] ?? 0;
   const filled = compact.map((v) => {
@@ -200,8 +200,8 @@ export function envelope(
   percent: number,
 ): EnvelopeResult {
   const basis = sma(values, period);
-  const upper: (number | undefined)[] = new Array(values.length).fill(undefined);
-  const lower: (number | undefined)[] = new Array(values.length).fill(undefined);
+  const upper: (number | undefined)[] = new Array<number | undefined>(values.length).fill(undefined);
+  const lower: (number | undefined)[] = new Array<number | undefined>(values.length).fill(undefined);
   for (let i = 0; i < values.length; i++) {
     const b = basis[i];
     if (b === undefined) continue;

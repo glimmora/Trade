@@ -95,11 +95,11 @@ export function computeIndicator(request: WorkerRequest): unknown {
     case 'supertrend':
       return supertrend(candles, num(settings, 'period', 10), num(settings, 'multiplier', 3));
     case 'vwap':
-      return vwap(candles, (str(settings, 'anchor', 'day') as 'day' | 'week' | 'session') ?? 'day');
+      return vwap(candles, str(settings, 'anchor', 'day') as 'day' | 'week' | 'session');
     case 'pivot-points': {
       const last = candles[candles.length - 1];
       if (last === undefined) return undefined;
-      return pivotPoints(last.high, last.low, last.close, (str(settings, 'type', 'classic') as 'classic' | 'fibonacci' | 'camarilla') ?? 'classic');
+      return pivotPoints(last.high, last.low, last.close, str(settings, 'type', 'classic') as 'classic' | 'fibonacci' | 'camarilla');
     }
     case 'rsi':
       return rsi(closes, num(settings, 'period', 14));
@@ -150,7 +150,7 @@ export function computeIndicator(request: WorkerRequest): unknown {
         maxRetestWindow: num(settings, 'maxRetestWindow', 20),
         minRiskReward: num(settings, 'minRiskReward', 2),
         requireConfirmation: settings?.requireConfirmation !== false,
-        entryMode: (str(settings, 'entryMode', 'retest') as 'rejection' | 'breakout' | 'retest') ?? 'retest',
+        entryMode: str(settings, 'entryMode', 'retest') as 'rejection' | 'breakout' | 'retest',
       });
     case 'supply-demand':
       return detectSupplyDemand(candles, { retestRequired: settings?.retestRequired === true });
@@ -169,7 +169,7 @@ export function computeIndicator(request: WorkerRequest): unknown {
     case 'candlestick-patterns':
       return detectCandlestickPatterns(candles);
     case 'divergence':
-      return detectDivergence(candles, (str(settings, 'oscillator', 'rsi') as 'rsi' | 'macd') ?? 'rsi', num(settings, 'period', 14));
+      return detectDivergence(candles, str(settings, 'oscillator', 'rsi') as 'rsi' | 'macd', num(settings, 'period', 14));
     default:
       throw new Error(`Unknown indicator: ${indicatorId}`);
   }
@@ -188,10 +188,10 @@ export function handleWorkerMessage(request: WorkerRequest): WorkerResponse {
   }
 }
 
-type WorkerScope = {
+interface WorkerScope {
   onmessage?: ((event: { data: WorkerRequest }) => void) | null;
   postMessage?: (message: WorkerResponse) => void;
-};
+}
 
 /** Install `onmessage` on the worker global scope. No-op outside a worker. */
 export function installWorkerHandler(): void {

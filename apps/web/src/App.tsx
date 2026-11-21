@@ -5,7 +5,8 @@ import { providerMeta } from './lib/providers';
 import { AppProvider, useApp } from './store/state';
 import { AlertsDialog } from './components/AlertsDialog';
 import { BottomNav } from './components/BottomNav';
-import type { MobileSheet } from './components/BottomNav';
+import type { MainView, MobileSheet } from './components/BottomNav';
+import BangranFxPage from './bangranfx/BangranFxPage';
 import { BottomPanes } from './components/BottomPanes';
 import { DrawingToolbar } from './components/DrawingToolbar';
 import { IndicatorDialog } from './components/IndicatorDialog';
@@ -21,11 +22,17 @@ import { TopToolbar } from './components/TopToolbar';
 import type { DialogKind } from './components/TopToolbar';
 import { Watchlist } from './components/Watchlist';
 
-function Shell(): JSX.Element {
+function Shell(): React.JSX.Element {
   const { state, translate, setActiveTool, pushToast } = useApp();
   const [dialog, setDialog] = useState<DialogKind>('none');
   const [sheet, setSheet] = useState<MobileSheet>('none');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [view, setView] = useState<MainView>('chart');
+
+  const switchView = useCallback((next: MainView) => {
+    setSheet('none');
+    setView(next);
+  }, []);
 
   useEffect(() => {
     const onChange = (): void => {
@@ -120,28 +127,57 @@ function Shell(): JSX.Element {
         isFullscreen={isFullscreen}
       />
       <PwaUpdatePrompt />
-      <div className="workspace">
-        <DrawingToolbar />
-        <main className="main-column">
-          <div className="chart-area">
-            <MultiChartLayout />
-          </div>
-          <BottomPanes />
-        </main>
-        {state.sidebarOpen ? (
-          <aside className="sidebar" aria-label={translate('sidebar')}>
-            <Watchlist />
-            <IndicatorList
-              onOpenDialog={() => {
-                openDialog('indicators');
-              }}
-            />
-            <ObjectTree />
-          </aside>
-        ) : null}
+      <div className="brg-viewbar" role="group" aria-label="Lihat">
+        <span className="brg-viewbar-label">Lihat:</span>
+        <button
+          type="button"
+          className="brg-viewbar-button"
+          aria-pressed={view === 'chart'}
+          onClick={() => {
+            switchView('chart');
+          }}
+        >
+          Chart
+        </button>
+        <button
+          type="button"
+          className="brg-viewbar-button"
+          aria-pressed={view === 'bangranfx'}
+          onClick={() => {
+            switchView('bangranfx');
+          }}
+        >
+          BangranFX
+        </button>
       </div>
+      {view === 'bangranfx' ? (
+        <main className="brg-view-main">
+          <BangranFxPage />
+        </main>
+      ) : (
+        <div className="workspace">
+          <DrawingToolbar />
+          <main className="main-column">
+            <div className="chart-area">
+              <MultiChartLayout />
+            </div>
+            <BottomPanes />
+          </main>
+          {state.sidebarOpen ? (
+            <aside className="sidebar" aria-label={translate('sidebar')}>
+              <Watchlist />
+              <IndicatorList
+                onOpenDialog={() => {
+                  openDialog('indicators');
+                }}
+              />
+              <ObjectTree />
+            </aside>
+          ) : null}
+        </div>
+      )}
 
-      {sheet !== 'none' ? (
+      {view === 'chart' && sheet !== 'none' ? (
         <div className="bottom-sheet" role="dialog" aria-modal="false" aria-label={translate('menu')}>
           <div className="bottom-sheet-header">
             <strong>
@@ -185,6 +221,8 @@ function Shell(): JSX.Element {
       <BottomNav
         sheet={sheet}
         onSheet={setSheet}
+        view={view}
+        onView={switchView}
         onOpenSettings={() => {
           openDialog('settings');
         }}
@@ -202,7 +240,7 @@ function Shell(): JSX.Element {
   );
 }
 
-export default function App(): JSX.Element {
+export default function App(): React.JSX.Element {
   return (
     <AppProvider>
       <Shell />

@@ -1,7 +1,7 @@
 import { drawingTool } from '../lib/drawings';
 import { useApp } from '../store/state';
 
-export function ObjectTree(): JSX.Element {
+export function ObjectTree(): React.JSX.Element {
   const {
     state,
     translate,

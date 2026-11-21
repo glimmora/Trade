@@ -67,7 +67,7 @@ export function lowest(values: readonly number[]): number {
 
 /** Rolling sum helper: returns undefined until the window is full. */
 export function rollingSum(values: readonly number[], period: number): (number | undefined)[] {
-  const out: (number | undefined)[] = new Array(values.length).fill(undefined);
+  const out: (number | undefined)[] = new Array<number | undefined>(values.length).fill(undefined);
   let sum = 0;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
@@ -98,7 +98,7 @@ export function trueRange(candles: readonly Candle[], i: number): number {
 
 /** Wilder's smoothing (used by RSI / ATR / ADX): first value is a plain mean. */
 export function wilderSmooth(values: readonly number[], period: number): (number | undefined)[] {
-  const out: (number | undefined)[] = new Array(values.length).fill(undefined);
+  const out: (number | undefined)[] = new Array<number | undefined>(values.length).fill(undefined);
   if (values.length < period || period <= 0) return out;
   let sum = 0;
   for (let i = 0; i < period; i++) {

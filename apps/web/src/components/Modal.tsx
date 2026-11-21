@@ -9,7 +9,7 @@ interface ModalProps {
 }
 
 /** Accessible modal: overlay click / Escape closes, focus starts on the close button. */
-export function Modal({ title, onClose, children }: ModalProps): JSX.Element {
+export function Modal({ title, onClose, children }: ModalProps): React.JSX.Element {
   const { translate } = useApp();
   const closeRef = useRef<HTMLButtonElement>(null);
 

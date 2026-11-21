@@ -3,7 +3,7 @@ import { LANGUAGES } from '../i18n';
 import { useApp } from '../store/state';
 import { Modal } from './Modal';
 
-export function SettingsDialog({ onClose }: { onClose: () => void }): JSX.Element {
+export function SettingsDialog({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { state, translate, setLanguage, exportState, importState, resetState, pushToast } =
     useApp();
   const fileRef = useRef<HTMLInputElement>(null);

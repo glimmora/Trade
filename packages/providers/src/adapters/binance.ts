@@ -102,12 +102,10 @@ export class BinanceAdapter extends RestClient implements ProviderAdapter {
   }
 
   private wsClient(): WsClient {
-    if (this.ws === undefined) {
-      this.ws = new WsClient(BINANCE_WS, (data) => this.onWsMessage(data), {
-        subscribePayload: (topic) => ({ method: 'SUBSCRIBE', params: [topic], id: 1 }),
-        unsubscribePayload: (topic) => ({ method: 'UNSUBSCRIBE', params: [topic], id: 1 }),
-      });
-    }
+    this.ws ??= new WsClient(BINANCE_WS, (data) => { this.onWsMessage(data); }, {
+      subscribePayload: (topic) => ({ method: 'SUBSCRIBE', params: [topic], id: 1 }),
+      unsubscribePayload: (topic) => ({ method: 'UNSUBSCRIBE', params: [topic], id: 1 }),
+    });
     return this.ws;
   }
 
@@ -143,6 +141,7 @@ export class BinanceAdapter extends RestClient implements ProviderAdapter {
     return parseBinanceKlines(raw, request.timeframe, await this.getServerTime());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'binance'), symbol, 'Binance');
     const interval = intervalFor(INTERVALS, timeframe, 'Binance');
@@ -150,6 +149,7 @@ export class BinanceAdapter extends RestClient implements ProviderAdapter {
     this.wsClient().subscribe(`${providerSymbol.toLowerCase()}@kline_${interval}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'binance')?.providerSymbol;
     if (providerSymbol === undefined) return;

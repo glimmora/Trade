@@ -5,9 +5,11 @@ let audioContext: AudioContext | null = null;
 export function playAlertSound(): void {
   try {
     if (!audioContext) {
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const audioWindow = window as unknown as {
+        AudioContext?: typeof AudioContext;
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const Ctor = audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
       if (!Ctor) return;
       audioContext = new Ctor();
     }

@@ -33,7 +33,7 @@ export function chartScreenshotDataUrl(chart: IChartApi): string | null {
  */
 export function downloadChartPng(
   chart: IChartApi,
-  filename: string = 'trade-chart.png',
+  filename = 'trade-chart.png',
 ): boolean {
   if (typeof document === 'undefined' || typeof URL === 'undefined') {
     return false;

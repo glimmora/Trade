@@ -24,6 +24,7 @@ describe('MemoryCache', () => {
 describe('CoalescingCache', () => {
   it('coalesces concurrent fetches into one underlying call', async () => {
     const cache = new CoalescingCache<string>(60_000);
+    // eslint-disable-next-line @typescript-eslint/require-await -- fetcher must return Promise<string> per getOrFetch contract
     const fetcher = vi.fn(async () => 'result');
     const [a, b] = await Promise.all([
       cache.getOrFetch('k', fetcher),
@@ -39,6 +40,7 @@ describe('CoalescingCache', () => {
 
   it('retries the fetcher after a failure', async () => {
     const cache = new CoalescingCache<string>(60_000);
+    // eslint-disable-next-line @typescript-eslint/require-await -- fetcher must return Promise<string> per getOrFetch contract
     const fetcher = vi.fn(async () => 'ok');
     fetcher.mockRejectedValueOnce(new Error('boom'));
     await expect(cache.getOrFetch('k', fetcher)).rejects.toThrow('boom');
@@ -64,7 +66,9 @@ describe('backoffDelayMs', () => {
 
 describe('retryWithBackoff', () => {
   it('retries a rate limit and then succeeds, honouring Retry-After', async () => {
+    // eslint-disable-next-line @typescript-eslint/require-await -- sleep must return Promise<void> per retryWithBackoff options
     const sleep = vi.fn(async () => undefined);
+    // eslint-disable-next-line @typescript-eslint/require-await -- fn must return a Promise per retryWithBackoff contract
     const fn = vi.fn(async () => 'done');
     fn.mockRejectedValueOnce(new RateLimitError('slow down', 2500));
     const result = await retryWithBackoff(fn, { sleep });
@@ -73,13 +77,17 @@ describe('retryWithBackoff', () => {
   });
 
   it('gives up after max attempts and rethrows non-retryable errors immediately', async () => {
+    // eslint-disable-next-line @typescript-eslint/require-await -- fn must return a Promise per retryWithBackoff contract
     const fn = vi.fn(async () => 'x');
     fn.mockRejectedValue(new RateLimitError('slow down'));
+    // eslint-disable-next-line @typescript-eslint/require-await -- sleep must return Promise<void> per retryWithBackoff options
     await expect(retryWithBackoff(fn, { maxAttempts: 2, sleep: async () => undefined })).rejects.toBeInstanceOf(RateLimitError);
     expect(fn).toHaveBeenCalledTimes(2);
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- bad must return a Promise per retryWithBackoff contract
     const bad = vi.fn(async () => 'x');
     bad.mockRejectedValue(new Error('not retryable'));
+    // eslint-disable-next-line @typescript-eslint/require-await -- sleep must return Promise<void> per retryWithBackoff options
     await expect(retryWithBackoff(bad, { sleep: async () => undefined })).rejects.toThrow('not retryable');
     expect(bad).toHaveBeenCalledTimes(1);
   });

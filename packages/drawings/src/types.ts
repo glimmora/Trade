@@ -282,10 +282,10 @@ export function createDrawingId(): string {
 export function validatePoints(type: DrawingType, points: readonly AnchorPoint[]): string | null {
   const spec = TOOL_POINTS[type];
   if (points.length < spec.min) {
-    return `${type} needs at least ${spec.min} point(s), got ${points.length}`;
+    return `${type} needs at least ${String(spec.min)} point(s), got ${String(points.length)}`;
   }
   if (spec.max !== null && points.length > spec.max) {
-    return `${type} needs at most ${spec.max} point(s), got ${points.length}`;
+    return `${type} needs at most ${String(spec.max)} point(s), got ${String(points.length)}`;
   }
   for (const point of points) {
     if (!Number.isFinite(point.time) || !Number.isFinite(point.price)) {

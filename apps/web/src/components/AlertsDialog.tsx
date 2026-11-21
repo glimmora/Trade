@@ -3,7 +3,7 @@ import { playAlertSound } from '../lib/sound';
 import { useApp } from '../store/state';
 import { Modal } from './Modal';
 
-export function AlertsDialog({ onClose }: { onClose: () => void }): JSX.Element {
+export function AlertsDialog({ onClose }: { onClose: () => void }): React.JSX.Element {
   const {
     state,
     translate,
@@ -96,7 +96,7 @@ export function AlertsDialog({ onClose }: { onClose: () => void }): JSX.Element 
                 type="button"
                 className="toolbar-button"
                 aria-pressed={alert.enabled}
-                aria-label={`${translate('alerts')}: ${alert.symbol} ${alert.price}`}
+                aria-label={`${translate('alerts')}: ${alert.symbol} ${String(alert.price)}`}
                 onClick={() => {
                   toggleAlert(alert.id);
                 }}
@@ -109,7 +109,7 @@ export function AlertsDialog({ onClose }: { onClose: () => void }): JSX.Element 
                 onClick={() => {
                   removeAlert(alert.id);
                 }}
-                aria-label={`${translate('delete')}: ${alert.symbol} ${alert.price}`}
+                aria-label={`${translate('delete')}: ${alert.symbol} ${String(alert.price)}`}
               >
                 ✕
               </button>

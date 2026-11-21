@@ -23,9 +23,17 @@ const INTERVALS: Record<Timeframe, string | undefined> = {
   '1D': '1440', '1W': '10080', '1M': undefined,
 };
 
+// Kraken's `result` holds the OHLC rows under the pair key AND a numeric
+// `last` (timestamp of the last candle) — the record values are not all
+// arrays, so `last` must be accepted or every real response fails to parse.
 const krakenOhlcSchema = z.object({
   error: z.array(z.string()),
-  result: z.record(z.array(z.tuple([z.number(), z.string(), z.string(), z.string(), z.string(), z.string(), z.string(), z.number()]))),
+  result: z.record(
+    z.union([
+      z.array(z.tuple([z.number(), z.string(), z.string(), z.string(), z.string(), z.string(), z.string(), z.number()])),
+      z.number(),
+    ]),
+  ),
 });
 
 export function parseKrakenOhlc(raw: unknown, pairKey: string, timeframe: Timeframe, serverNowMs: number): Candle[] {
@@ -35,7 +43,7 @@ export function parseKrakenOhlc(raw: unknown, pairKey: string, timeframe: Timefr
     throw new Error(`Kraken error: ${parsed.data.error.join('; ')}`);
   }
   const rows = parsed.data.result[pairKey];
-  if (rows === undefined) throw new Error(`Kraken OHLC: no data for ${pairKey}`);
+  if (rows === undefined || !Array.isArray(rows)) throw new Error(`Kraken OHLC: no data for ${pairKey}`);
   const mapped = rows.map(([time, open, high, low, close, , volume]) => ({
     timeMs: time * 1000,
     open: Number(open), high: Number(high), low: Number(low),
@@ -67,7 +75,7 @@ export class KrakenAdapter extends RestClient implements ProviderAdapter {
         const [, interval = '60', symbol = ''] = topic.split(':');
         return { interval: Number(interval), symbol };
       };
-      this.ws = new WsClient(KRAKEN_WS, (data) => this.onWsMessage(data), {
+      this.ws = new WsClient(KRAKEN_WS, (data) => { this.onWsMessage(data); }, {
         subscribePayload: (topic) => {
           const { interval, symbol } = parseTopic(topic);
           return { method: 'subscribe', params: { channel: 'ohlc', symbol: [symbol], interval, snapshot: true } };
@@ -82,7 +90,7 @@ export class KrakenAdapter extends RestClient implements ProviderAdapter {
   }
 
   private onWsMessage(data: unknown): void {
-    const msg = data as { channel?: string; type?: string; data?: Array<{ symbol: string; interval: number; open: number; high: number; low: number; close: number; volume: number; timestamp: string }> };
+    const msg = data as { channel?: string; type?: string; data?: { symbol: string; interval: number; open: number; high: number; low: number; close: number; volume: number; timestamp: string }[] };
     if (msg.channel !== 'ohlc' || msg.type !== 'update' || msg.data === undefined) return;
     const row = msg.data[0];
     if (row === undefined) return;
@@ -119,18 +127,20 @@ export class KrakenAdapter extends RestClient implements ProviderAdapter {
     return parseKrakenOhlc(raw, pairKey, request.timeframe, await this.getServerTime());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'kraken'), symbol, 'Kraken');
     intervalFor(INTERVALS, timeframe, 'Kraken');
     this.router.set(symbol, timeframe, onTick);
-    this.wsClient().subscribe(`ohlc:${INTERVALS[timeframe]}:${providerSymbol}`);
+    this.wsClient().subscribe(`ohlc:${INTERVALS[timeframe] ?? ''}:${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'kraken')?.providerSymbol;
     if (providerSymbol === undefined) return;
     this.router.delete(symbol, timeframe);
-    this.ws?.unsubscribe(`ohlc:${INTERVALS[timeframe]}:${providerSymbol}`);
+    this.ws?.unsubscribe(`ohlc:${INTERVALS[timeframe] ?? ''}:${providerSymbol}`);
   }
 
   async getTicker(symbol: string): Promise<Ticker> {

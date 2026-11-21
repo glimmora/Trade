@@ -74,7 +74,7 @@ export class TwelveDataAdapter extends RestClient implements ProviderAdapter {
   private wsClient(): WsClient {
     if (this.ws === undefined) {
       const symbolOf = (topic: string): string => topic.split(':')[1] ?? '';
-      this.ws = new WsClient(TWELVEDATA_WS, (data) => this.onWsMessage(data), {
+      this.ws = new WsClient(TWELVEDATA_WS, (data) => { this.onWsMessage(data); }, {
         // Auth must precede subscription on every (re)connect.
         onOpen: () => {
           this.ws?.sendRaw(JSON.stringify({ action: 'auth', params: { apikey: this.apiKey() } }));
@@ -121,6 +121,7 @@ export class TwelveDataAdapter extends RestClient implements ProviderAdapter {
     return parseTwelveDataCandles(raw, request.timeframe, Date.now());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'twelvedata'), symbol, 'Twelve Data');
     intervalFor(INTERVALS, timeframe, 'Twelve Data');
@@ -129,6 +130,7 @@ export class TwelveDataAdapter extends RestClient implements ProviderAdapter {
     this.wsClient().subscribe(`price:${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'twelvedata')?.providerSymbol;
     if (providerSymbol === undefined) return;
@@ -147,6 +149,7 @@ export class TwelveDataAdapter extends RestClient implements ProviderAdapter {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     // Twelve Data has no dedicated time endpoint; use local time corrected
     // by the quote timestamp on the next ticker call. Documented fallback.

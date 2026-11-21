@@ -115,12 +115,11 @@ export function supertrend(
   multiplier = 3,
 ): SupertrendResult {
   const value = undefinedSeries(candles.length);
-  const trend: number[] = new Array(candles.length).fill(0);
+  const trend: number[] = new Array<number>(candles.length).fill(0);
   const atrSeries = atr(candles, period);
   let prevUpper = 0;
   let prevLower = 0;
   let prevTrend = 1;
-  let prevValue = 0;
   for (let i = 0; i < candles.length; i++) {
     const c = candles[i];
     const a = atrSeries[i];
@@ -139,9 +138,7 @@ export function supertrend(
     prevUpper = finalUpper;
     prevLower = finalLower;
     prevTrend = t;
-    prevValue = v;
   }
-  void prevValue;
   return { value, trend };
 }
 
@@ -158,7 +155,7 @@ export function parabolicSar(
   maxAf = 0.2,
 ): ParabolicSarResult {
   const value = undefinedSeries(candles.length);
-  const trend: number[] = new Array(candles.length).fill(0);
+  const trend: number[] = new Array<number>(candles.length).fill(0);
   if (candles.length < 2) return { value, trend };
   let rising = true;
   let sar = candles[0]?.low ?? 0;
@@ -275,10 +272,10 @@ export function vwap(candles: readonly Candle[], anchor: VwapAnchor = 'day'): (n
     const d = new Date(c.time * 1000);
     const key =
       anchor === 'week'
-        ? `${d.getUTCFullYear()}-W${Math.floor(d.getUTCDate() / 7)}`
+        ? `${String(d.getUTCFullYear())}-W${String(Math.floor(d.getUTCDate() / 7))}`
         : anchor === 'session'
-          ? `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}-${Math.floor(d.getUTCHours() / 8)}`
-          : `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+          ? `${String(d.getUTCFullYear())}-${String(d.getUTCMonth())}-${String(d.getUTCDate())}-${String(Math.floor(d.getUTCHours() / 8))}`
+          : `${String(d.getUTCFullYear())}-${String(d.getUTCMonth())}-${String(d.getUTCDate())}`;
     if (key !== anchorKey) {
       anchorKey = key;
       cumPv = 0;

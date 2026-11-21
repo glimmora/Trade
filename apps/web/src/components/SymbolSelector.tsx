@@ -4,7 +4,7 @@ import { providersForSymbol } from '../lib/providers';
 import { useApp } from '../store/state';
 import { Modal } from './Modal';
 
-export function SymbolSelector({ onClose }: { onClose: () => void }): JSX.Element {
+export function SymbolSelector({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { state, translate, setSymbol } = useApp();
   const [query, setQuery] = useState('');
 

@@ -227,5 +227,5 @@ export function providerSupportsTimeframe(
   providerId: ProviderId,
   timeframe: Timeframe,
 ): boolean {
-  return PROVIDER_TIMEFRAMES[providerId]?.includes(timeframe) ?? false;
+  return PROVIDER_TIMEFRAMES[providerId].includes(timeframe);
 }

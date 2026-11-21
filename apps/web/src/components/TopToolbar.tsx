@@ -23,7 +23,7 @@ export function TopToolbar({
   onScreenshot,
   onToggleFullscreen,
   isFullscreen,
-}: TopToolbarProps): JSX.Element {
+}: TopToolbarProps): React.JSX.Element {
   const { state, translate, connection, setTimeframe, setChartType, setPriceScale, setProvider, setTheme, setLanguage, setLayout, toggleSidebar } = useApp();
   const symbol = SYMBOLS.find((entry) => entry.id === state.symbol);
   const kindLabel =
@@ -129,7 +129,7 @@ export function TopToolbar({
         aria-label={translate('indicators')}
       >
         {translate('indicators')}
-        {state.indicators.length > 0 ? ` (${state.indicators.length})` : ''}
+        {state.indicators.length > 0 ? ` (${String(state.indicators.length)})` : ''}
       </button>
 
       <div className="layout-group" role="group" aria-label={translate('layout')}>
@@ -190,10 +190,10 @@ export function TopToolbar({
         onClick={() => {
           onOpenDialog('alerts');
         }}
-        aria-label={`${translate('alerts')} (${enabledAlerts})`}
+        aria-label={`${translate('alerts')} (${String(enabledAlerts)})`}
       >
         {translate('alerts')}
-        {enabledAlerts > 0 ? ` (${enabledAlerts})` : ''}
+        {enabledAlerts > 0 ? ` (${String(enabledAlerts)})` : ''}
       </button>
       <button
         type="button"

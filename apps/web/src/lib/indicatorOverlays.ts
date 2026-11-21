@@ -226,7 +226,7 @@ function descriptorsForInstance(
       descriptors.push(
         lineDescriptor(
           `${instance.id}:volume`,
-          `${name}`,
+          name,
           instance,
           'histogram',
           toPoints(candles, volume, instance.color),

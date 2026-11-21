@@ -113,7 +113,7 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
     const chart = createChart(container, chartOptionsForTheme(themeRef.current, width, height));
     chartRef.current = chart;
 
-    const onCrosshair = (param: MouseEventParams<Time>): void => {
+    const onCrosshair = (param: MouseEventParams): void => {
       const time = typeof param.time === 'number' ? param.time : null;
       if (time === null || param.point === undefined) {
         setLegend(legendFromCandle(lastCandle(candlesRef.current), timeframeRef.current));
@@ -169,6 +169,10 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
     });
     observer.observe(container);
 
+    const overlaySeries = overlaySeriesRef.current;
+    const segmentSeries = segmentSeriesRef.current;
+    const priceLines = priceLinesRef.current;
+
     return () => {
       chart.unsubscribeCrosshairMove(onCrosshair);
       chart.timeScale().unsubscribeVisibleTimeRangeChange(onVisibleRange);
@@ -176,9 +180,9 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
       chart.remove();
       chartRef.current = null;
       mainSeriesRef.current = null;
-      overlaySeriesRef.current.clear();
-      segmentSeriesRef.current.clear();
-      priceLinesRef.current.clear();
+      overlaySeries.clear();
+      segmentSeries.clear();
+      priceLines.clear();
     };
   }, []);
 
@@ -389,7 +393,7 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
         }
       },
     }),
-    [ref],
+    [],
   );
 
   const legendText =

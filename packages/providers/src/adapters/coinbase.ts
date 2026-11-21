@@ -33,13 +33,12 @@ export function parseCoinbaseCandles(
   serverNowMs: number,
 ): Candle[] {
   if (!Array.isArray(raw)) throw new Error('Coinbase candles: expected an array');
-  const rows = [...raw].reverse().map((row) => {
-    const r = row as CoinbaseCandleRow;
-    const [time, low, high, open, close, volume] = r;
+  const rows = [...(raw as unknown as CoinbaseCandleRow[])].reverse().map((row) => {
+    const [time, low, high, open, close, volume] = row;
     return {
       timeMs: time * 1000,
-      open: Number(open), high: Number(high), low: Number(low),
-      close: Number(close), volume: Number(volume),
+      open, high, low,
+      close, volume,
     };
   });
   return normalizeCandles(rows, timeframe, serverNowMs).candles;
@@ -65,7 +64,7 @@ export class CoinbaseAdapter extends RestClient implements ProviderAdapter {
   private wsClient(): WsClient {
     if (this.ws === undefined) {
       const productId = (topic: string): string => topic.split(':')[1] ?? '';
-      this.ws = new WsClient(COINBASE_WS, (data) => this.onWsMessage(data), {
+      this.ws = new WsClient(COINBASE_WS, (data) => { this.onWsMessage(data); }, {
         subscribePayload: (topic) => ({
           type: 'subscribe', product_ids: [productId(topic)], channels: ['ticker'],
         }),
@@ -113,6 +112,7 @@ export class CoinbaseAdapter extends RestClient implements ProviderAdapter {
     return parseCoinbaseCandles(raw, request.timeframe, Date.now());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'coinbase'), symbol, 'Coinbase');
     intervalFor(STRING_INTERVALS, timeframe, 'Coinbase');
@@ -120,6 +120,7 @@ export class CoinbaseAdapter extends RestClient implements ProviderAdapter {
     this.wsClient().subscribe(`ticker:${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'coinbase')?.providerSymbol;
     if (providerSymbol === undefined) return;

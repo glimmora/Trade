@@ -50,6 +50,17 @@ pnpm build
 
 Requires Node.js >= 20 and pnpm >= 9.
 
+## BangranFX Strategy Tools
+
+Halaman **Strategi BRG — BangranFX** merangkum metode Bang RAN (RAN Trade Academy)
+untuk gold / XAU/USD — SNR "garis sakti", parallel channel, multi-timeframe, SND,
+dan pola W/M — lengkap dengan chart strategi, kalkulator lot/SL-TP/layering/MM,
+wizard SNR/SND, checklist entry, sesi scalping, dan jurnal. Buka dari bar
+"Lihat: Chart | BangranFX" (desktop) atau tombol BangranFX di bottom navigation
+(mobile). Dokumentasi: [docs/bangranfx-tools.md](docs/bangranfx-tools.md).
+Klaim profit di video adalah klaim pembicara, bukan fakta terverifikasi —
+hanya untuk belajar, bukan nasihat keuangan.
+
 ## Deployment
 
 `main` deploys automatically to GitHub Pages after green CI

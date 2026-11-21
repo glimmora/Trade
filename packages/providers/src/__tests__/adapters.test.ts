@@ -158,8 +158,9 @@ function jsonResponse(body: unknown, status: number): Response {
 
 /** fetch stub: the primary host geo-blocks (451); the fallback host serves. */
 function geoBlockedFetch(calls: string[]): FetchStub {
+  // eslint-disable-next-line @typescript-eslint/require-await -- handler must return Promise<Response> per FetchStub (typeof fetch)
   const handler = async (input: string | URL | Request): Promise<Response> => {
-    const url = String(input);
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     calls.push(url);
     if (url.startsWith('https://api.binance.com')) {
       return jsonResponse(
@@ -178,19 +179,20 @@ function geoBlockedFetch(calls: string[]): FetchStub {
     }
     return jsonResponse({ code: -1121, msg: 'Invalid symbol.' }, 400);
   };
-  return handler as FetchStub;
+  return handler;
 }
 
 /** fetch stub: every host geo-blocks (451). */
 function alwaysGeoBlockedFetch(calls: string[]): FetchStub {
+  // eslint-disable-next-line @typescript-eslint/require-await -- handler must return Promise<Response> per FetchStub (typeof fetch)
   const handler = async (input: string | URL | Request): Promise<Response> => {
-    calls.push(String(input));
+    calls.push(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
     return jsonResponse(
       { code: 0, msg: 'Service unavailable from a restricted location' },
       451,
     );
   };
-  return handler as FetchStub;
+  return handler;
 }
 
 describe('Binance geo-restriction fallback (data-api.binance.vision)', () => {

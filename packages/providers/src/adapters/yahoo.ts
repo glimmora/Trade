@@ -81,7 +81,7 @@ export function parseYahooChart(raw: unknown, timeframe: Timeframe, serverNowMs:
   if (result === undefined) throw new Error('Yahoo chart: empty result');
   const quote = result.indicators.quote[0];
   if (quote === undefined) throw new Error('Yahoo chart: no quote data');
-  const rows: Array<{ timeMs: number; open: number; high: number; low: number; close: number; volume: number }> = [];
+  const rows: { timeMs: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
   result.timestamp.forEach((ts, i) => {
     const open = quote.open[i];
     const high = quote.high[i];
@@ -159,6 +159,7 @@ export class YahooAdapter extends RestClient implements ProviderAdapter {
    * ~5s and fold the polled price into the forming candle for the current
    * timeframe bucket. A new bucket opens at the previous candle's close.
    */
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     this.goldSymbol(symbol);
     intervalFor(INTERVALS, timeframe, 'Yahoo Finance');
@@ -181,7 +182,7 @@ export class YahooAdapter extends RestClient implements ProviderAdapter {
     const price = ticker.price;
     const previous = this.formingCandles.get(key);
     let candle: Candle;
-    if (previous !== undefined && previous.time === openTime) {
+    if (previous?.time === openTime) {
       candle = {
         time: openTime,
         open: previous.open,
@@ -205,6 +206,7 @@ export class YahooAdapter extends RestClient implements ProviderAdapter {
     this.router.dispatch(symbol, timeframe, candle, true, 'yahoo', nowMs);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const key = TickRouter.key(symbol, timeframe);
     this.router.delete(symbol, timeframe);
@@ -233,7 +235,7 @@ export class YahooAdapter extends RestClient implements ProviderAdapter {
       price = metaPrice;
     } else {
       const quote = result.indicators.quote[0];
-      const closes = quote?.close.filter((c): c is number => c !== null && c !== undefined) ?? [];
+      const closes = quote?.close.filter((c): c is number => c !== null) ?? [];
       price = closes[closes.length - 1];
     }
     if (price === undefined) throw new Error('Yahoo ticker: no price');
@@ -252,6 +254,7 @@ export class YahooAdapter extends RestClient implements ProviderAdapter {
     return ticker;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     return Date.now();
   }

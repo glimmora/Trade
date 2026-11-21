@@ -381,11 +381,7 @@ export function applyPriceScaleMode(
   candles?: readonly Candle[],
 ): PriceScaleKind {
   let effective = mode;
-  if (
-    mode === 'log' &&
-    candles !== undefined &&
-    candles.some((candle) => candle.low <= 0)
-  ) {
+  if (mode === 'log' && (candles?.some((candle) => candle.low <= 0) ?? false)) {
     effective = 'linear';
   }
   const lwcMode =

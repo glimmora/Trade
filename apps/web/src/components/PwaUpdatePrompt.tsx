@@ -10,7 +10,7 @@ import { useApp } from '../store/state';
  * worker takes control, a banner offers a reload. Until the first real
  * update ships, nothing is shown.
  */
-export function PwaUpdatePrompt(): JSX.Element | null {
+export function PwaUpdatePrompt(): React.JSX.Element | null {
   const { translate } = useApp();
   const [updateAvailable, setUpdateAvailable] = useState(false);
 

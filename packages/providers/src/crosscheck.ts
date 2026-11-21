@@ -156,9 +156,9 @@ export function lastUpdateAge(lastUpdateMs: number | undefined, nowMs: number): 
   if (lastUpdateMs === undefined) return 'never';
   const ageSec = Math.max(0, Math.floor((nowMs - lastUpdateMs) / 1000));
   if (ageSec < 5) return 'just now';
-  if (ageSec < 60) return `${ageSec}s ago`;
+  if (ageSec < 60) return `${String(ageSec)}s ago`;
   const minutes = Math.floor(ageSec / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${String(minutes)}m ago`;
   const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
+  return `${String(hours)}h ago`;
 }

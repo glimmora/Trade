@@ -81,6 +81,7 @@ describe('registry symbols', () => {
     expect(providerSymbolFor('XAU/USD', 'tradingview')?.providerSymbol).toBe('OANDA:XAUUSD');
     expect(providerSymbolFor('XAU/USD', 'tradingview')?.verified).toBe(true);
   });
+  it('gives every registry symbol a positive tick size and precision', () => {
     for (const symbol of REGISTRY_SYMBOLS) {
       expect(symbol.tickSize).toBeGreaterThan(0);
       expect(symbol.volumeUnit.length).toBeGreaterThan(0);

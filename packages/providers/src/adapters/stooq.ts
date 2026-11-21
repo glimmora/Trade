@@ -16,7 +16,7 @@ export const STOOQ_BASE = 'https://stooq.com';
 
 export function parseStooqCsv(csv: string, serverNowMs: number): ReturnType<typeof normalizeCandles>['candles'] {
   const lines = csv.trim().split('\n');
-  const rows: Array<{ timeMs: number; open: number; high: number; low: number; close: number; volume: number }> = [];
+  const rows: { timeMs: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
   for (const line of lines.slice(1)) {
     const parts = line.split(',');
     if (parts.length < 5) continue;
@@ -61,6 +61,7 @@ export class StooqAdapter extends RestClient implements ProviderAdapter {
     return request.limit !== undefined ? candles.slice(-request.limit) : candles;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(): Promise<void> {
     throw new Error('Stooq has no live stream; daily CSV only.');
   }
@@ -80,6 +81,7 @@ export class StooqAdapter extends RestClient implements ProviderAdapter {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     return Date.now();
   }

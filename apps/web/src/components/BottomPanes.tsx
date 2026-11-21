@@ -8,7 +8,7 @@ import { useApp } from '../store/state';
  * shows the indicator name and a remove button, the body shows the waiting
  * state until the indicator worker renders real values into it.
  */
-export function BottomPanes(): JSX.Element {
+export function BottomPanes(): React.JSX.Element {
   const { state, translate, addPane, removePane } = useApp();
   const [height, setHeight] = useState(140);
   const oscillators = INDICATOR_CATALOG.filter((entry) => entry.group === 'oscillators');
@@ -53,7 +53,7 @@ export function BottomPanes(): JSX.Element {
           state.panes.map((kind) => {
             const entry = oscillators.find((item) => item.kind === kind);
             return (
-              <div key={kind} className="pane" style={{ height: `${height}px` }}>
+              <div key={kind} className="pane" style={{ height: `${String(height)}px` }}>
                 <div className="pane-header">
                   <strong>{entry?.name ?? kind}</strong>
                   <button

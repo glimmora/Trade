@@ -73,14 +73,14 @@ export class BybitAdapter extends RestClient implements ProviderAdapter {
     if (existing !== undefined) return existing;
     const client = new WsClient(
       category === 'linear' ? BYBIT_WS_LINEAR : BYBIT_WS_SPOT,
-      (data) => this.onWsMessage(data),
+      (data) => { this.onWsMessage(data); },
     );
     this.sockets.set(category, client);
     return client;
   }
 
   private onWsMessage(data: unknown): void {
-    const msg = data as { topic?: string; data?: Array<{ start: number; open: string; high: string; low: string; close: string; volume: string; confirm: boolean }> };
+    const msg = data as { topic?: string; data?: { start: number; open: string; high: string; low: string; close: string; volume: string; confirm: boolean }[] };
     if (msg.topic === undefined || msg.data === undefined || msg.data.length === 0) return;
     // topic: "kline.60.BTCUSDT"
     const parts = msg.topic.split('.');
@@ -119,6 +119,7 @@ export class BybitAdapter extends RestClient implements ProviderAdapter {
     return parseBybitKlines(raw, request.timeframe, await this.getServerTime());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'bybit'), symbol, 'Bybit');
     const interval = intervalFor(INTERVALS, timeframe, 'Bybit');
@@ -129,6 +130,7 @@ export class BybitAdapter extends RestClient implements ProviderAdapter {
     client.subscribe(`kline.${interval}.${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'bybit')?.providerSymbol;
     if (providerSymbol === undefined) return;
@@ -140,7 +142,7 @@ export class BybitAdapter extends RestClient implements ProviderAdapter {
   async getTicker(symbol: string): Promise<Ticker> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'bybit'), symbol, 'Bybit');
     const data = await this.fetchJson<{
-      result: { list: Array<{ symbol: string; lastPrice: string; price24hPcnt: string; volume24h: string }> };
+      result: { list: { symbol: string; lastPrice: string; price24hPcnt: string; volume24h: string }[] };
     }>(
       `${this.baseUrl}/v5/market/tickers?category=${categoryFor(symbol)}&symbol=${providerSymbol}`,
     );

@@ -26,7 +26,7 @@ export function ChartHost({
 }: {
   panelLabel: string;
   isPrimary: boolean;
-}): JSX.Element {
+}): React.JSX.Element {
   const { state, translate } = useApp();
   const { candles } = useMarketData();
   const overlays = useMemo(

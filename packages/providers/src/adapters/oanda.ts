@@ -78,7 +78,7 @@ export function parseOandaCandles(raw: unknown, timeframe: Timeframe, serverNowM
   if (!parsed.success) {
     throw new Error('OANDA candles: malformed response');
   }
-  const rows: Array<{ timeMs: number; open: number; high: number; low: number; close: number; volume: number }> = [];
+  const rows: { timeMs: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
   for (const candle of parsed.data.candles) {
     if (candle.mid === undefined) continue;
     const timeMs = Date.parse(candle.time);
@@ -131,36 +131,32 @@ export class OandaAdapter extends RestClient implements ProviderAdapter {
   async accountId(): Promise<string> {
     const configured = this.keys?.oandaAccountId?.trim();
     if (configured !== undefined && configured !== '') return configured;
-    if (this.accountIdPromise === undefined) {
-      this.accountIdPromise = (async () => {
-        const data = await this.fetchJson<unknown>(
-          `${this.baseUrl}/accounts`,
-          { headers: this.authHeaders() },
-        );
-        const parsed = oandaAccountsResponseSchema.safeParse(data);
-        if (!parsed.success) {
-          throw new Error('OANDA accounts: malformed response');
-        }
-        const first = parsed.data.accounts[0];
-        if (first === undefined) {
-          throw new UnsupportedError('OANDA: no account found for this token');
-        }
-        return first.id;
-      })();
-    }
+    this.accountIdPromise ??= (async () => {
+      const data = await this.fetchJson<unknown>(
+        `${this.baseUrl}/accounts`,
+        { headers: this.authHeaders() },
+      );
+      const parsed = oandaAccountsResponseSchema.safeParse(data);
+      if (!parsed.success) {
+        throw new Error('OANDA accounts: malformed response');
+      }
+      const first = parsed.data.accounts[0];
+      if (first === undefined) {
+        throw new UnsupportedError('OANDA: no account found for this token');
+      }
+      return first.id;
+    })();
     return this.accountIdPromise;
   }
 
   /** Verify once per adapter instance that the account serves XAU_USD. */
   private verifyInstrument(): Promise<void> {
-    if (this.verifiedInstrument === undefined) {
-      this.verifiedInstrument = this.checkInstrument().catch((error: unknown) => {
-        // A failed check is not a completed verification — allow a retry
-        // on the next call instead of poisoning the adapter.
-        this.verifiedInstrument = undefined;
-        throw error;
-      });
-    }
+    this.verifiedInstrument ??= this.checkInstrument().catch((error: unknown) => {
+      // A failed check is not a completed verification — allow a retry
+      // on the next call instead of poisoning the adapter.
+      this.verifiedInstrument = undefined;
+      throw error;
+    });
     return this.verifiedInstrument;
   }
 
@@ -233,6 +229,7 @@ export class OandaAdapter extends RestClient implements ProviderAdapter {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'oanda'), symbol, 'OANDA');
     intervalFor(INTERVALS, timeframe, 'OANDA');
@@ -248,6 +245,7 @@ export class OandaAdapter extends RestClient implements ProviderAdapter {
     this.timers.set(key, timer);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const key = TickRouter.key(symbol, timeframe);
     const timer = this.timers.get(key);
@@ -267,7 +265,7 @@ export class OandaAdapter extends RestClient implements ProviderAdapter {
       const openTime = alignCandleOpenTime(nowMs, timeframe);
       const key = TickRouter.key(symbol, timeframe);
       const existing = this.buckets.get(key);
-      const bucket: Candle = existing !== undefined && existing.time === openTime
+      const bucket: Candle = existing?.time === openTime
         ? {
           ...existing,
           high: Math.max(existing.high, price),
@@ -283,6 +281,7 @@ export class OandaAdapter extends RestClient implements ProviderAdapter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     // OANDA has no dedicated time endpoint; use local time. Documented fallback.
     return Date.now();

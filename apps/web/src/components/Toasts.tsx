@@ -1,7 +1,7 @@
 import { useApp } from '../store/state';
 
 /** In-app toasts (alerts, confirmations, status). Announced via aria-live. */
-export function Toasts(): JSX.Element {
+export function Toasts(): React.JSX.Element {
   const { toasts, dismissToast, translate } = useApp();
   return (
     <div className="toasts" aria-live="polite" aria-label="Notifications">

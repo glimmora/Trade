@@ -85,7 +85,7 @@ describe('macd', () => {
   it('is positive on a sustained up-move', () => {
     const up = Array.from({ length: 40 }, (_, i) => 100 + i);
     const { macd: m } = macd(up, 12, 26, 9);
-    expect((m[39] as number) > 0).toBe(true);
+    expect((m[39] ?? Number.NaN) > 0).toBe(true);
   });
 });
 
@@ -131,7 +131,7 @@ describe('mfi / adx', () => {
     });
     const { adx: a, plusDi, minusDi } = adx(candles, 14);
     expect(a[39]).toBeDefined();
-    expect((plusDi[39] as number) > (minusDi[39] as number)).toBe(true);
+    expect((plusDi[39] ?? Number.NaN) > (minusDi[39] ?? Number.NaN)).toBe(true);
   });
 });
 
@@ -156,7 +156,7 @@ describe('volume indicators', () => {
       candle(12, 14, 12, 14, 100, 1),
     ];
     const ad = accumulationDistribution(candles);
-    expect(ad[1]).toBeGreaterThan(ad[0] as number);
+    expect(ad[1]).toBeGreaterThan(ad[0] ?? Number.NaN);
   });
   it('awesome oscillator is defined after 34 bars', () => {
     const candles = closesToCandles(Array.from({ length: 40 }, (_, i) => 100 + i * 0.5));

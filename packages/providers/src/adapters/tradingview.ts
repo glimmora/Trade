@@ -80,6 +80,7 @@ export class TradingViewScannerAdapter extends RestClient implements ProviderAda
     this.baseUrl = options.baseUrl ?? TRADINGVIEW_SCANNER;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getCandles(): Promise<Candle[]> {
     // Snapshot only: the scanner has no candle endpoint. Throwing
     // UnsupportedError (never an empty or invented series) lets the
@@ -89,6 +90,7 @@ export class TradingViewScannerAdapter extends RestClient implements ProviderAda
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     tvSymbolFor(symbol); // Fail fast on an unmapped symbol.
     const key = TickRouter.key(symbol, timeframe);
@@ -102,6 +104,7 @@ export class TradingViewScannerAdapter extends RestClient implements ProviderAda
     this.timers.set(key, timer);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const key = TickRouter.key(symbol, timeframe);
     const timer = this.timers.get(key);
@@ -121,7 +124,7 @@ export class TradingViewScannerAdapter extends RestClient implements ProviderAda
       const openTime = alignCandleOpenTime(nowMs, timeframe);
       const key = TickRouter.key(symbol, timeframe);
       const existing = this.buckets.get(key);
-      const bucket: Candle = existing !== undefined && existing.time === openTime
+      const bucket: Candle = existing?.time === openTime
         ? {
           ...existing,
           high: Math.max(existing.high, ticker.price),
@@ -163,6 +166,7 @@ export class TradingViewScannerAdapter extends RestClient implements ProviderAda
     return ticker;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     // The scanner has no time endpoint; use local time, same as Yahoo/OANDA.
     return Date.now();

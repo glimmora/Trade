@@ -50,8 +50,8 @@ describe('keltner / donchian', () => {
     const { upper, basis, lower } = keltnerChannel(rising(30), 20, 2, 10);
     const i = 29;
     expect(basis[i]).toBeDefined();
-    expect((upper[i] as number) > (basis[i] as number)).toBe(true);
-    expect((lower[i] as number) < (basis[i] as number)).toBe(true);
+    expect((upper[i] ?? Number.NaN) > (basis[i] ?? Number.NaN)).toBe(true);
+    expect((lower[i] ?? Number.NaN) < (basis[i] ?? Number.NaN)).toBe(true);
   });
   it('donchian upper is the highest high of the window', () => {
     const candles = rising(10);
@@ -78,7 +78,7 @@ describe('supertrend / parabolic sar', () => {
   it('parabolic sar sits below price in an uptrend', () => {
     const { trend, value } = parabolicSar(rising(30));
     expect(trend[29]).toBe(1);
-    expect((value[29] as number) < 129).toBe(true);
+    expect((value[29] ?? Number.NaN) < 129).toBe(true);
   });
 });
 

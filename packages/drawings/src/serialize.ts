@@ -130,13 +130,13 @@ export function migrateDrawingsFile(value: unknown): DrawingObject[] {
   }
   if (typeof value === 'object' && value !== null) {
     const record = value as Record<string, unknown>;
-    if (record['version'] === undefined && Array.isArray(record['objects'])) {
+    if (record.version === undefined && Array.isArray(record.objects)) {
       // Unversioned wrapper: treat the objects as v1.
-      return z.array(drawingObjectSchema).parse(record['objects']).map(toDrawingObject);
+      return z.array(drawingObjectSchema).parse(record.objects).map(toDrawingObject);
     }
-    if (typeof record['version'] === 'number' && record['version'] !== DRAWINGS_FILE_VERSION) {
+    if (typeof record.version === 'number' && record.version !== DRAWINGS_FILE_VERSION) {
       throw new Error(
-        `Unsupported drawings file version: ${String(record['version'])} (expected ${DRAWINGS_FILE_VERSION})`,
+        `Unsupported drawings file version: ${String(record.version)} (expected ${String(DRAWINGS_FILE_VERSION)})`,
       );
     }
     return drawingsFileSchema.parse(value).objects.map(toDrawingObject);

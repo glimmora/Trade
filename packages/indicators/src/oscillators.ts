@@ -72,7 +72,7 @@ export function stochastic(
     if (close === undefined || hi === lo) continue;
     rawK[i] = ((close - lo) / (hi - lo)) * 100;
   }
-  const compact = (s: (number | undefined)[]): number[] => s.map((v) => (v === undefined ? Number.NaN : v));
+  const compact = (s: (number | undefined)[]): number[] => s.map((v) => (v ?? Number.NaN));
   const smooth = (s: (number | undefined)[], p: number): (number | undefined)[] => {
     const first = s.findIndex((v) => v !== undefined);
     if (first < 0) return undefinedSeries(s.length);
@@ -341,7 +341,7 @@ export function adx(candles: readonly Candle[], period = 14): AdxResult {
 
 /** On-Balance Volume. */
 export function obv(candles: readonly Candle[]): number[] {
-  const out: number[] = new Array(candles.length).fill(0);
+  const out: number[] = new Array<number>(candles.length).fill(0);
   let running = 0;
   for (let i = 0; i < candles.length; i++) {
     const c = candles[i];
@@ -370,7 +370,7 @@ export function volumeWithMa(
 
 /** Accumulation / Distribution line. */
 export function accumulationDistribution(candles: readonly Candle[]): number[] {
-  const out: number[] = new Array(candles.length).fill(0);
+  const out: number[] = new Array<number>(candles.length).fill(0);
   let running = 0;
   for (let i = 0; i < candles.length; i++) {
     const c = candles[i];
@@ -413,7 +413,6 @@ export function chaikinMoneyFlow(candles: readonly Candle[], period = 20): (numb
     flowVol.push(cur - prevAd);
     prevAd = cur;
   }
-  void ad;
   for (let i = period - 1; i < candles.length; i++) {
     let volSum = 0;
     let flowSum = 0;

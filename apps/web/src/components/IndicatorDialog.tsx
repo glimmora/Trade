@@ -7,7 +7,7 @@ import { Modal } from './Modal';
 const GROUPS: readonly IndicatorGroup[] = ['overlays', 'oscillators', 'structure'] as const;
 
 /** Indicator picker + per-indicator settings (period, color, line width, visibility). */
-export function IndicatorDialog({ onClose }: { onClose: () => void }): JSX.Element {
+export function IndicatorDialog({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { state, translate, addIndicator, removeIndicator, toggleIndicator, updateIndicator } =
     useApp();
   const [group, setGroup] = useState<IndicatorGroup>('overlays');

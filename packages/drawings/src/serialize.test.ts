@@ -38,13 +38,25 @@ function sampleObjects() {
   ];
 }
 
+interface SerializedDrawingsFile {
+  version: number;
+  app: string;
+  symbol: string;
+  objects: unknown[];
+}
+
+function parseSerialized(json: string): SerializedDrawingsFile {
+  return JSON.parse(json) as SerializedDrawingsFile;
+}
+
 describe('serialize / deserialize round-trip', () => {
   it('round-trips drawings exactly, including position data and labels', () => {
     const objects = sampleObjects();
     const json = serializeDrawings(objects, { symbol: 'BTC/USDT', exportedAt: 123 });
-    expect(JSON.parse(json).version).toBe(1);
-    expect(JSON.parse(json).app).toBe('trade');
-    expect(JSON.parse(json).symbol).toBe('BTC/USDT');
+    const parsed = parseSerialized(json);
+    expect(parsed.version).toBe(1);
+    expect(parsed.app).toBe('trade');
+    expect(parsed.symbol).toBe('BTC/USDT');
     expect(deserializeDrawings(json)).toEqual(objects);
   });
 
@@ -56,14 +68,14 @@ describe('serialize / deserialize round-trip', () => {
 describe('migration', () => {
   it('accepts a bare array of drawings (legacy format)', () => {
     const objects = sampleObjects();
-    const migrated = migrateDrawingsFile(JSON.parse(serializeDrawings(objects)).objects);
+    const migrated = migrateDrawingsFile(parseSerialized(serializeDrawings(objects)).objects);
     expect(migrated).toEqual(objects);
   });
 
   it('accepts an unversioned wrapper with an objects array', () => {
     const objects = sampleObjects();
     const migrated = migrateDrawingsFile({
-      objects: JSON.parse(serializeDrawings(objects)).objects,
+      objects: parseSerialized(serializeDrawings(objects)).objects,
     });
     expect(migrated).toEqual(objects);
   });
@@ -111,11 +123,11 @@ describe('validation failures', () => {
   it('throws on an out-of-range opacity', () => {
     const objects = sampleObjects();
     const parsed = JSON.parse(serializeDrawings(objects)) as {
-      objects: Array<Record<string, unknown>>;
+      objects: Record<string, unknown>[];
     };
     const first = parsed.objects[0];
     if (first !== undefined) {
-      first['style'] = { color: '#000', opacity: 2, thickness: 1, dash: 'solid' };
+      first.style = { color: '#000', opacity: 2, thickness: 1, dash: 'solid' };
     }
     expect(() => deserializeDrawings(JSON.stringify(parsed))).toThrow();
   });

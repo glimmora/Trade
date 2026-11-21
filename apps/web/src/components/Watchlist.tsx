@@ -98,7 +98,7 @@ function formatChange(change24hPct: number | undefined): string {
  * The store's lastPrice is deliberately not reused — it only ever holds
  * the active symbol's price.
  */
-export function Watchlist(): JSX.Element {
+export function Watchlist(): React.JSX.Element {
   const { state, translate, connection, setSymbol } = useApp();
   const connecting = connection === 'connecting' || connection === 'offline';
   const [tickers, setTickers] = useState<Readonly<Record<string, Ticker>>>({});

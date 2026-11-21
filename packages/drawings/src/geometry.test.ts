@@ -141,8 +141,8 @@ describe('hitTestDrawing', () => {
     expect(hitTestDrawing(filled, { x: 30, y: 850 }, scale)).toBe(true);
     expect(hitTestDrawing(filled, { x: 500, y: 850 }, scale)).toBe(false);
     // Rebuild without the fill key to respect the exact-optional contract.
-    const { fill: _ignored, ...styleNoFill } = filled.style;
-    void _ignored;
+    const styleNoFill = { ...filled.style };
+    delete styleNoFill.fill;
     const unfilledObj = { ...filled, style: styleNoFill };
     expect(hitTestDrawing(unfilledObj, { x: 30, y: 850 }, scale)).toBe(false);
     expect(hitTestDrawing(unfilledObj, { x: 30, y: 900 }, scale)).toBe(true);

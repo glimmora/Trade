@@ -62,7 +62,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
         const [, bar = '', instId = ''] = topic.split(':');
         return { bar, instId };
       };
-      this.ws = new WsClient(OKX_WS, (data) => this.onWsMessage(data), {
+      this.ws = new WsClient(OKX_WS, (data) => { this.onWsMessage(data); }, {
         subscribePayload: (topic) => {
           const { bar, instId } = parseTopic(topic);
           return { op: 'subscribe', args: [{ channel: 'candle', bar, instId }] };
@@ -77,7 +77,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
   }
 
   private onWsMessage(data: unknown): void {
-    const msg = data as { arg?: { channel?: string; instId?: string; bar?: string }; data?: Array<[string, string, string, string, string, string, string, string, string]> };
+    const msg = data as { arg?: { channel?: string; instId?: string; bar?: string }; data?: [string, string, string, string, string, string, string, string, string][] };
     if (msg.arg?.channel !== 'candle' || msg.data === undefined || msg.data.length === 0) return;
     const row = msg.data[0];
     const instId = msg.arg.instId;
@@ -111,6 +111,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
     return parseOkxCandles(raw, request.timeframe, await this.getServerTime());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'okx'), symbol, 'OKX');
     const interval = intervalFor(INTERVALS, timeframe, 'OKX');
@@ -118,6 +119,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
     this.wsClient().subscribe(`candle:${interval}:${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'okx')?.providerSymbol;
     if (providerSymbol === undefined) return;
@@ -129,7 +131,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'okx'), symbol, 'OKX');
     const data = await this.fetchJson<{
       code: string;
-      data: Array<{ instId: string; last: string; vol24h: string; ts: string }>;
+      data: { instId: string; last: string; vol24h: string; ts: string }[];
     }>(`${this.baseUrl}/api/v5/market/ticker?instId=${providerSymbol}`);
     const first = data.data[0];
     if (first === undefined) throw new Error('OKX ticker: empty result');
@@ -141,7 +143,7 @@ export class OkxAdapter extends RestClient implements ProviderAdapter {
   }
 
   async getServerTime(): Promise<number> {
-    const data = await this.fetchJson<{ data: Array<{ ts: string }> }>(
+    const data = await this.fetchJson<{ data: { ts: string }[] }>(
       `${this.baseUrl}/api/v5/public/time`,
     );
     const first = data.data[0];

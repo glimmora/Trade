@@ -1,5 +1,7 @@
 import { parseRetryAfter, retryWithBackoff } from '../cache';
 import { RateLimitError, UnsupportedError } from '../types';
+
+export { UnsupportedError };
 import type {
   ProviderClientOptions,
   ProviderRuntimeKeys,
@@ -52,7 +54,7 @@ export class RestClient {
         throw new RateLimitError(`Rate limited by ${new URL(url).hostname}`, retryAfter);
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${new URL(url).hostname}`);
+        throw new Error(`HTTP ${String(response.status)} from ${new URL(url).hostname}`);
       }
       return (await response.json()) as T;
     });
@@ -72,7 +74,7 @@ export class RestClient {
         throw new RateLimitError(`Rate limited by ${new URL(url).hostname}`, retryAfter);
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${new URL(url).hostname}`);
+        throw new Error(`HTTP ${String(response.status)} from ${new URL(url).hostname}`);
       }
       return response.text();
     });

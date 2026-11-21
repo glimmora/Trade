@@ -44,7 +44,7 @@ describe('registry', () => {
     expect(getIndicatorDefinition('break-retest')?.origin).toBe('source-derived');
     expect(getIndicatorDefinition('supply-demand')?.origin).toBe('source-derived');
     expect(getIndicatorDefinition('sma')?.origin).toBe('source-derived');
-    expect(INDICATOR_BY_ID['unknown']).toBeUndefined();
+    expect(INDICATOR_BY_ID.unknown).toBeUndefined();
     expect(MAX_SIMULTANEOUS_INDICATORS).toBe(20);
   });
 });

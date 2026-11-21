@@ -30,7 +30,7 @@ const gateRowSchema = z.tuple([
 
 export function parseGateCandles(raw: unknown, timeframe: Timeframe, serverNowMs: number): Candle[] {
   if (!Array.isArray(raw)) throw new Error('Gate.io candles: expected an array');
-  const rows = [...raw].reverse().map((row) => {
+  const rows = [...(raw as unknown[])].reverse().map((row) => {
     const parsed = gateRowSchema.safeParse(row);
     if (!parsed.success) throw new Error('Gate.io candles: malformed row');
     const [ts, volume, close, high, low, open] = parsed.data;
@@ -70,7 +70,7 @@ export class GateAdapter extends RestClient implements ProviderAdapter {
         const { interval, symbol } = parseTopic(topic);
         return { time: Math.floor(Date.now() / 1000), channel: 'spot.candlesticks', event, payload: [interval, symbol] };
       };
-      this.ws = new WsClient(GATE_WS, (data) => this.onWsMessage(data), {
+      this.ws = new WsClient(GATE_WS, (data) => { this.onWsMessage(data); }, {
         subscribePayload: (topic) => payload('subscribe', topic),
         unsubscribePayload: (topic) => payload('unsubscribe', topic),
       });
@@ -79,10 +79,10 @@ export class GateAdapter extends RestClient implements ProviderAdapter {
   }
 
   private onWsMessage(data: unknown): void {
-    const msg = data as { method?: string; params?: [string, Array<{ t: number; o: string; h: string; l: string; c: string; v: string; n: string }>] };
+    const msg = data as { method?: string; params?: [string, { t: number; o: string; h: string; l: string; c: string; v: string; n: string }[]] };
     if (msg.method !== 'update' || msg.params === undefined) return;
     const [channel, rows] = msg.params;
-    if (channel !== 'spot.candlesticks' || rows === undefined || rows.length === 0) return;
+    if (channel !== 'spot.candlesticks' || rows.length === 0) return;
     const row = rows[0];
     if (row === undefined) return;
     // Gate.io identifies each candle with n = "<interval>_<pair>", e.g. "1m_BTC_USDT".
@@ -116,6 +116,7 @@ export class GateAdapter extends RestClient implements ProviderAdapter {
     return parseGateCandles(raw, request.timeframe, Date.now());
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     const providerSymbol = requireProviderSymbol(providerSymbolFor(symbol, 'gate'), symbol, 'Gate.io');
     const interval = intervalFor(INTERVALS, timeframe, 'Gate.io');
@@ -123,11 +124,12 @@ export class GateAdapter extends RestClient implements ProviderAdapter {
     this.wsClient().subscribe(`spot.candlesticks:${interval}:${providerSymbol}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const providerSymbol = providerSymbolFor(symbol, 'gate')?.providerSymbol;
     if (providerSymbol === undefined) return;
     this.router.delete(symbol, timeframe);
-    this.ws?.unsubscribe(`spot.candlesticks:${INTERVALS[timeframe]}:${providerSymbol}`);
+    this.ws?.unsubscribe(`spot.candlesticks:${INTERVALS[timeframe] ?? ''}:${providerSymbol}`);
   }
 
   async getTicker(symbol: string): Promise<Ticker> {

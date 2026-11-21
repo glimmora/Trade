@@ -45,9 +45,9 @@ describe('support & resistance', () => {
     });
     const resistance = zones.find((z) => z.type === 'resistance');
     expect(resistance).toBeDefined();
-    expect((resistance as Zone).touches).toBeGreaterThanOrEqual(2);
-    expect((resistance as Zone).strength).toBeGreaterThan(0);
-    expect((resistance as Zone).strength).toBeLessThanOrEqual(1);
+    expect(resistance?.touches).toBeGreaterThanOrEqual(2);
+    expect(resistance?.strength).toBeGreaterThan(0);
+    expect(resistance?.strength).toBeLessThanOrEqual(1);
   });
   it('a body close through a zone invalidates it', () => {
     const base = zigzag([90, 95, 100, 95, 90, 95, 100, 95, 90]);
@@ -205,7 +205,7 @@ describe('break & retest', () => {
     expect(setup?.status).toBe('confirmed');
     expect(setup?.entry).toBe(99);
     expect(setup?.stop).toBeLessThan(98);
-    expect(setup?.target1).toBeGreaterThan(setup?.entry as number);
+    expect(setup?.target1).toBeGreaterThan(setup?.entry ?? Number.NaN);
     expect(setup?.riskReward1).toBe(2);
   });
   it('reports awaiting-retest when price never returns', () => {

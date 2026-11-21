@@ -110,11 +110,13 @@ export class CoinGeckoAdapter extends RestClient implements ProviderAdapter {
     );
     let candles = parseCoinGeckoOhlc(raw, granularity, await this.getServerTime());
     // The OHLC endpoint takes no from/to window: filter locally.
-    if (request.from !== undefined) {
-      candles = candles.filter((candle) => candle.time >= request.from);
+    const from = request.from;
+    if (from !== undefined) {
+      candles = candles.filter((candle) => candle.time >= from);
     }
-    if (request.to !== undefined) {
-      candles = candles.filter((candle) => candle.time <= request.to);
+    const to = request.to;
+    if (to !== undefined) {
+      candles = candles.filter((candle) => candle.time <= to);
     }
     if (request.limit !== undefined) {
       candles = candles.slice(-request.limit);
@@ -122,6 +124,7 @@ export class CoinGeckoAdapter extends RestClient implements ProviderAdapter {
     return candles;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async subscribe(symbol: string, timeframe: Timeframe, onTick: TickHandler): Promise<void> {
     requireProviderSymbol(providerSymbolFor(symbol, 'coingecko'), symbol, 'CoinGecko');
     const key = TickRouter.key(symbol, timeframe);
@@ -135,6 +138,7 @@ export class CoinGeckoAdapter extends RestClient implements ProviderAdapter {
     this.timers.set(key, timer);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async unsubscribe(symbol: string, timeframe: Timeframe): Promise<void> {
     const key = TickRouter.key(symbol, timeframe);
     const timer = this.timers.get(key);
@@ -154,7 +158,7 @@ export class CoinGeckoAdapter extends RestClient implements ProviderAdapter {
       const openTime = alignCandleOpenTime(nowMs, timeframe);
       const key = TickRouter.key(symbol, timeframe);
       const existing = this.buckets.get(key);
-      const bucket: Candle = existing !== undefined && existing.time === openTime
+      const bucket: Candle = existing?.time === openTime
         ? {
           ...existing,
           high: Math.max(existing.high, ticker.price),
@@ -194,6 +198,7 @@ export class CoinGeckoAdapter extends RestClient implements ProviderAdapter {
     return ticker;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- interface ProviderAdapter mengharuskan return Promise
   async getServerTime(): Promise<number> {
     // CoinGecko has no time endpoint; use local time, same as Yahoo/OANDA.
     return Date.now();

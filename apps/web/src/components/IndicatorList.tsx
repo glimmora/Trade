@@ -1,7 +1,7 @@
 import { catalogEntry } from '../lib/indicators';
 import { useApp } from '../store/state';
 
-export function IndicatorList({ onOpenDialog }: { onOpenDialog: () => void }): JSX.Element {
+export function IndicatorList({ onOpenDialog }: { onOpenDialog: () => void }): React.JSX.Element {
   const { state, translate, removeIndicator, toggleIndicator, moveIndicator } = useApp();
   return (
     <section className="sidebar-section" aria-label={translate('indicators')}>

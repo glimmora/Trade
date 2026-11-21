@@ -8,7 +8,7 @@ import { useApp } from '../store/state';
  * tree, undo/redo and persistence flows work end-to-end before the canvas
  * hit-testing lands with the drawings agent.
  */
-export function DrawingToolbar(): JSX.Element {
+export function DrawingToolbar(): React.JSX.Element {
   const { state, translate, setActiveTool, addDrawing, toggleMagnet, pushToast } = useApp();
 
   return (

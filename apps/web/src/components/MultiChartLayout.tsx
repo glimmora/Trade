@@ -7,12 +7,12 @@ import { ChartHost } from './ChartHost';
  * symbol/timeframe; per-panel symbol selection is a follow-up once the chart
  * engine owns per-panel state.
  */
-export function MultiChartLayout(): JSX.Element {
+export function MultiChartLayout(): React.JSX.Element {
   const { state } = useApp();
   const count = state.layout === '1' ? 1 : state.layout === '2' ? 2 : 4;
   const panels = Array.from({ length: count }, (_, index) => index);
   return (
-    <div className={`multi-chart multi-chart-${count}`} role="region" aria-label="Charts">
+    <div className={`multi-chart multi-chart-${String(count)}`} role="region" aria-label="Charts">
       {panels.map((index) => (
         <div key={index} className="chart-panel">
           <div className="chart-panel-header">
@@ -23,7 +23,7 @@ export function MultiChartLayout(): JSX.Element {
               {index + 1}/{count}
             </span>
           </div>
-          <ChartHost panelLabel={`Chart ${index + 1}`} isPrimary={index === 0} />
+          <ChartHost panelLabel={`Chart ${String(index + 1)}`} isPrimary={index === 0} />
         </div>
       ))}
     </div>
