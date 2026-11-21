@@ -28,10 +28,10 @@ jobs:
       proxy: ${{ steps.filter.outputs.proxy }}
       e2e: ${{ steps.filter.outputs.e2e }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filter
         with:
           filters: |
@@ -60,29 +60,38 @@ jobs:
     name: Install (shared)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
-      # NOTE: pnpm-lock.yaml is committed once generated (first `pnpm install`
-      # by the operator); until then this step fails loudly rather than
-      # silently drifting dependency versions.
-      - run: pnpm install --frozen-lockfile
+      # NOTE: pnpm-lock.yaml is generated in CI by the
+      # "Bootstrap pnpm lockfile" workflow; until it exists, installs run
+      # without --frozen-lockfile and warn in the run summary.
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning::pnpm-lock.yaml is missing — installing without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile."
+            echo "## Lockfile warning" >> "$GITHUB_STEP_SUMMARY"
+            echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
+            pnpm install
+          fi
       - name: Cache Turbo
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-
       - name: Upload workspace for downstream jobs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: workspace
           path: |
@@ -97,17 +106,26 @@ jobs:
     needs: [changes, setup]
     if: needs.changes.outputs.web == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning::pnpm-lock.yaml is missing — installing without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile."
+            echo "## Lockfile warning" >> "$GITHUB_STEP_SUMMARY"
+            echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
+            pnpm install
+          fi
       - run: pnpm lint
       - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md,yml,yaml}"
       - run: pnpm typecheck
@@ -116,10 +134,10 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -134,17 +152,26 @@ jobs:
       needs.changes.outputs.providers == 'true' ||
       needs.changes.outputs.proxy == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning::pnpm-lock.yaml is missing — installing without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile."
+            echo "## Lockfile warning" >> "$GITHUB_STEP_SUMMARY"
+            echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
+            pnpm install
+          fi
       - run: pnpm test -- --coverage
       - name: Coverage gate (>= 85% on indicators & providers)
         run: |
@@ -158,17 +185,26 @@ jobs:
     needs: [changes, setup]
     if: needs.changes.outputs.web == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning::pnpm-lock.yaml is missing — installing without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile."
+            echo "## Lockfile warning" >> "$GITHUB_STEP_SUMMARY"
+            echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
+            pnpm install
+          fi
       - run: pnpm build
       - name: Bundle-size budget (initial JS <= 250 KB gz)
         run: |
@@ -188,7 +224,7 @@ jobs:
             if (total > 250 * 1024) { console.error('Bundle budget exceeded'); process.exit(1); }
           "
       - name: Upload dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-dist
           path: apps/web/dist
@@ -204,25 +240,34 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning::pnpm-lock.yaml is missing — installing without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile."
+            echo "## Lockfile warning" >> "$GITHUB_STEP_SUMMARY"
+            echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
+            pnpm install
+          fi
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm exec playwright install --with-deps chromium webkit
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: web-dist
           path: apps/web/dist
@@ -230,7 +275,7 @@ jobs:
         run: pnpm --filter @trade/e2e test -- --shard=${{ matrix.shard }}/3
       - name: Upload traces/videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report-shard-${{ matrix.shard }}
           path: |
@@ -243,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
       - name: Ping one public ticker endpoint
@@ -257,18 +302,18 @@ jobs:
     needs: [build]
     if: needs.changes.outputs.web == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: web-dist
           path: apps/web/dist
       - name: Serve preview
         run: pnpm dlx serve -l 4173 apps/web/dist &
       - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
           urls: |
             http://localhost:4173/

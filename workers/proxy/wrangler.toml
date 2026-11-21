@@ -1,0 +1,7 @@
+name = "trade-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-12"
+
+# No secrets in this file. The worker forwards only allow-listed public
+# market-data hosts; any upstream key is supplied per request by the
+# client and is never stored here.

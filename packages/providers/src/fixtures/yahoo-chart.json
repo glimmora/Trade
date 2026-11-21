@@ -1,0 +1,1 @@
+{"chart":{"error":null,"result":[{"indicators":{"quote":[{"close":[4125.1,4128.4,4130.5],"high":[4126.0,4130.0,4132.0],"low":[4119.0,4122.5,4127.0],"open":[4120.0,4125.1,4128.4],"volume":[1200,1500,1100]}]},"meta":{"currency":"USD","exchangeName":"CME","instrumentType":"FUTURE","symbol":"GC=F"},"timestamp":[1763721600,1763725200,1763728800]}]}}

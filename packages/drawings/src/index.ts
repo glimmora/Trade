@@ -1,3 +1,9 @@
-// Placeholder — real implementation lands with its owning milestone.
-// This export exists only so the workspace resolves.
-export const PLACEHOLDER = true;
+/**
+ * @trade/drawings — pure drawing model + hit testing for the Trade
+ * charting terminal. No DOM, no chart library, worker-friendly.
+ */
+export * from './types.js';
+export * from './geometry.js';
+export * from './position.js';
+export * from './store.js';
+export * from './serialize.js';
