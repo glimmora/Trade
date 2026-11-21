@@ -112,6 +112,15 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
     requiresKey: false,
     delayed: true,
   },
+  {
+    id: 'oanda',
+    label: 'OANDA (Practice)',
+    // All app timeframes except 3m — OANDA has no M3 granularity.
+    timeframes: ALL_TIMEFRAMES.filter((tf) => tf !== '3m'),
+    note: 'requiresApiKey',
+    requiresKey: true,
+    delayed: false,
+  },
 ] as const;
 
 export function providerMeta(id: ProviderId): ProviderMeta {

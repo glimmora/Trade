@@ -3,6 +3,7 @@ import { BybitAdapter } from './bybit';
 import { CoinbaseAdapter } from './coinbase';
 import { GateAdapter } from './gate';
 import { KrakenAdapter } from './kraken';
+import { OandaAdapter } from './oanda';
 import { OkxAdapter } from './okx';
 import { StooqAdapter } from './stooq';
 import { TwelveDataAdapter } from './twelvedata';
@@ -16,6 +17,7 @@ export { BybitAdapter } from './bybit';
 export { CoinbaseAdapter } from './coinbase';
 export { GateAdapter } from './gate';
 export { KrakenAdapter } from './kraken';
+export { OandaAdapter } from './oanda';
 export { OkxAdapter } from './okx';
 export { StooqAdapter } from './stooq';
 export { TwelveDataAdapter } from './twelvedata';
@@ -27,6 +29,7 @@ export { parseKrakenOhlc } from './kraken';
 export { parseCoinbaseCandles } from './coinbase';
 export { parseGateCandles } from './gate';
 export { parseTwelveDataCandles } from './twelvedata';
+export { parseOandaCandles } from './oanda';
 export { parseYahooChart } from './yahoo';
 export { parseStooqCsv } from './stooq';
 
@@ -40,6 +43,7 @@ export const ADAPTER_FACTORIES: Record<ProviderId, AdapterFactory> = {
   coinbase: (options) => new CoinbaseAdapter(options),
   gate: (options) => new GateAdapter(options),
   twelvedata: (options) => new TwelveDataAdapter(options),
+  oanda: (options) => new OandaAdapter(options),
   yahoo: (options) => new YahooAdapter(options),
   stooq: (options) => new StooqAdapter(options),
 };

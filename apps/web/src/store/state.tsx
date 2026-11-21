@@ -223,7 +223,7 @@ export function migrateState(value: unknown): AppState {
       : base.symbol;
   const provider = asEnum<ProviderId>(
     value.provider,
-    ['binance', 'bybit', 'okx', 'kraken', 'coinbase', 'gate', 'twelvedata', 'yahoo', 'stooq'],
+    ['binance', 'bybit', 'okx', 'kraken', 'coinbase', 'gate', 'twelvedata', 'oanda', 'yahoo', 'stooq'],
     base.provider,
   );
   return {

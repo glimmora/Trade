@@ -77,6 +77,10 @@ export interface ProviderAdapter {
 export interface ProviderRuntimeKeys {
   /** Twelve Data key, supplied by the user at runtime. Never committed. */
   twelvedata?: string;
+  /** OANDA personal access token, supplied by the user at runtime. Never committed. */
+  oanda?: string;
+  /** OANDA account ID, supplied by the user at runtime. Optional; blank means auto-discovered from the account list. Never committed. */
+  oandaAccountId?: string;
 }
 
 /** How a provider is reached: direct from the browser, or via the proxy worker. */

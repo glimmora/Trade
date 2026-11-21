@@ -71,7 +71,7 @@ describe('provider timeframes', () => {
 
   it('covers every provider in the registry', () => {
     expect(Object.keys(PROVIDER_TIMEFRAMES).sort()).toEqual(
-      ['binance', 'bybit', 'coinbase', 'gate', 'kraken', 'okx', 'stooq', 'twelvedata', 'yahoo'].sort(),
+      ['binance', 'bybit', 'coinbase', 'gate', 'kraken', 'oanda', 'okx', 'stooq', 'twelvedata', 'yahoo'].sort(),
     );
   });
 });

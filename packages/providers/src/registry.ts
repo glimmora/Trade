@@ -9,7 +9,10 @@ import { TIMEFRAMES } from '@trade/core';
  * verification flags.
  *
  * INSTRUMENT IDENTITY — READ FIRST:
- * - "XAU/USD" is SPOT GOLD. Only Twelve Data serves true spot gold here.
+ * - "XAU/USD" is SPOT GOLD. Twelve Data serves true spot gold here, and
+ *   OANDA v20 (practice) also serves spot gold — but its instrument name
+ *   (XAU_USD) was unconfirmed at implementation time, so the adapter
+ *   verifies it at runtime via the account instruments endpoint.
  *   Yahoo "GC=F" is a gold FUTURES contract and Stooq "xauusd" is a daily
  *   delayed quote; both are labelled as proxies, never as spot.
  * - "XAUT/USDT" is TOKENIZED GOLD (Tether Gold), a different instrument
@@ -88,6 +91,11 @@ export const REGISTRY_SYMBOLS: readonly RegistrySymbol[] = [
     tickSize: 0.01,
     volumeUnit: 'troy ounces (where reported; often 0 for spot FX feeds)',
     providers: {
+      oanda: {
+        providerSymbol: 'XAU_USD',
+        verified: false,
+        note: 'Instrument name XAU_USD is unconfirmed — verified at runtime via the account instruments endpoint before use.',
+      },
       twelvedata: { providerSymbol: 'XAU/USD', verified: true },
       yahoo: {
         providerSymbol: 'GC=F',
@@ -154,6 +162,8 @@ export const PROVIDER_TIMEFRAMES: Record<ProviderId, readonly Timeframe[]> = {
   coinbase: ['1m', '5m', '15m', '1h', '6h', '1D'],
   gate: ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1D'],
   twelvedata: ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1D', '1W', '1M'],
+  // All app timeframes except 3m — OANDA has no M3 granularity.
+  oanda: TIMEFRAMES.filter((tf) => tf !== '3m'),
   yahoo: ['1m', '5m', '15m', '30m', '1h', '1D', '1W', '1M'],
   stooq: ['1D'],
 };

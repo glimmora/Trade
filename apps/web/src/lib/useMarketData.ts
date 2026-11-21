@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Candle, ProviderId, Timeframe } from '@trade/core';
 import { createAdapter, providersForSymbol as registryProvidersForSymbol } from '@trade/providers';
-import type { LiveTick, ProviderAdapter, ProviderClientOptions } from '@trade/providers';
+import type { LiveTick, ProviderAdapter, ProviderClientOptions, ProviderRuntimeKeys } from '@trade/providers';
 import { mergeLiveTick } from '../chart/live';
 import { providerMeta } from './providers';
 import { useApp } from '../store/state';
@@ -14,6 +14,8 @@ export interface MarketDataResult {
 }
 
 const TWELVE_DATA_KEY_STORAGE_KEY = 'trade:twelvedata-key';
+const OANDA_TOKEN_STORAGE_KEY = 'trade:oanda-token';
+const OANDA_ACCOUNT_ID_STORAGE_KEY = 'trade:oanda-account-id';
 const CANDLE_LIMIT = 500;
 /** Providers that need the proxy worker, which is not deployed. */
 const PROXY_DEPENDENT_PROVIDERS: readonly ProviderId[] = ['yahoo', 'stooq'];
@@ -81,23 +83,54 @@ function readTwelveDataKey(): string | undefined {
   }
 }
 
-function adapterOptions(twelveDataKey: string | undefined): ProviderClientOptions {
-  return twelveDataKey === undefined ? {} : { keys: { twelvedata: twelveDataKey } };
+function readOandaToken(): string | undefined {
+  try {
+    const raw = window.localStorage.getItem(OANDA_TOKEN_STORAGE_KEY);
+    const key = raw === null ? undefined : raw.trim();
+    return key === undefined || key === '' ? undefined : key;
+  } catch {
+    return undefined;
+  }
+}
+
+function readOandaAccountId(): string | undefined {
+  try {
+    const raw = window.localStorage.getItem(OANDA_ACCOUNT_ID_STORAGE_KEY);
+    const key = raw === null ? undefined : raw.trim();
+    return key === undefined || key === '' ? undefined : key;
+  } catch {
+    return undefined;
+  }
+}
+
+function adapterOptions(
+  twelveDataKey: string | undefined,
+  oandaToken: string | undefined,
+  oandaAccountId: string | undefined,
+): ProviderClientOptions {
+  const keys: ProviderRuntimeKeys = {};
+  if (twelveDataKey !== undefined) keys.twelvedata = twelveDataKey;
+  if (oandaToken !== undefined) keys.oanda = oandaToken;
+  if (oandaAccountId !== undefined) keys.oandaAccountId = oandaAccountId;
+  return Object.keys(keys).length === 0 ? {} : { keys };
 }
 
 /**
  * The single fallback candidate: the next verified provider for the symbol
  * in registry order, excluding the failed one. Twelve Data is skipped when
- * no key is stored; yahoo/stooq are skipped (they need the proxy worker).
+ * no key is stored; OANDA is skipped when no token is stored; yahoo/stooq
+ * are skipped (they need the proxy worker).
  */
 function fallbackCandidates(
   symbol: string,
   failed: ProviderId,
   twelveDataKey: string | undefined,
+  oandaToken: string | undefined,
 ): ProviderId[] {
   return registryProvidersForSymbol(symbol, true).filter((candidate) => {
     if (candidate === failed) return false;
     if (candidate === 'twelvedata' && twelveDataKey === undefined) return false;
+    if (candidate === 'oanda' && oandaToken === undefined) return false;
     if (PROXY_DEPENDENT_PROVIDERS.includes(candidate)) return false;
     return true;
   });
@@ -122,16 +155,18 @@ async function loadEntry(entry: SharedEntry, callbacks: StoreCallbacks): Promise
   const isCurrent = (): boolean =>
     !entry.disposed && entry.generation === generation && entries.get(entry.key) === entry;
   const twelveDataKey = readTwelveDataKey();
+  const oandaToken = readOandaToken();
+  const oandaAccountId = readOandaAccountId();
   const attempts: readonly ProviderId[] = [
     entry.provider,
-    ...fallbackCandidates(entry.symbol, entry.provider, twelveDataKey).slice(0, 1),
+    ...fallbackCandidates(entry.symbol, entry.provider, twelveDataKey, oandaToken).slice(0, 1),
   ];
 
   for (const providerId of attempts) {
     if (!isCurrent()) return;
     let adapter: ProviderAdapter | null = null;
     try {
-      adapter = createAdapter(providerId, adapterOptions(twelveDataKey));
+      adapter = createAdapter(providerId, adapterOptions(twelveDataKey, oandaToken, oandaAccountId));
       const candles = await adapter.getCandles({
         symbol: entry.symbol,
         timeframe: entry.timeframe,

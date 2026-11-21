@@ -52,7 +52,8 @@ export type ProviderId =
   | 'gate'
   | 'twelvedata'
   | 'yahoo'
-  | 'stooq';
+  | 'stooq'
+  | 'oanda';
 
 export const PROVIDER_IDS: readonly ProviderId[] = [
   'binance',
@@ -64,6 +65,7 @@ export const PROVIDER_IDS: readonly ProviderId[] = [
   'twelvedata',
   'yahoo',
   'stooq',
+  'oanda',
 ] as const;
 
 /** A tradeable symbol. Adding a symbol is a config-only change. */
@@ -104,6 +106,7 @@ export const SYMBOLS: readonly SymbolInfo[] = [
       twelvedata: 'XAU/USD',
       yahoo: 'GC=F',
       stooq: 'xauusd',
+      oanda: 'XAU_USD',
     },
   },
   {

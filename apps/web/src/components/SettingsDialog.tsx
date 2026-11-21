@@ -14,6 +14,20 @@ export function SettingsDialog({ onClose }: { onClose: () => void }): JSX.Elemen
       return '';
     }
   });
+  const [oandaToken, setOandaToken] = useState(() => {
+    try {
+      return window.localStorage.getItem('trade:oanda-token') ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [oandaAccountId, setOandaAccountId] = useState(() => {
+    try {
+      return window.localStorage.getItem('trade:oanda-account-id') ?? '';
+    } catch {
+      return '';
+    }
+  });
 
   const downloadExport = (): void => {
     const blob = new Blob([exportState()], { type: 'application/json' });
@@ -32,6 +46,30 @@ export function SettingsDialog({ onClose }: { onClose: () => void }): JSX.Elemen
         window.localStorage.setItem('trade:twelvedata-key', apiKey.trim());
       } else {
         window.localStorage.removeItem('trade:twelvedata-key');
+      }
+    } catch {
+      // Storage is best-effort.
+    }
+  };
+
+  const saveOandaToken = (): void => {
+    try {
+      if (oandaToken.trim()) {
+        window.localStorage.setItem('trade:oanda-token', oandaToken.trim());
+      } else {
+        window.localStorage.removeItem('trade:oanda-token');
+      }
+    } catch {
+      // Storage is best-effort.
+    }
+  };
+
+  const saveOandaAccountId = (): void => {
+    try {
+      if (oandaAccountId.trim()) {
+        window.localStorage.setItem('trade:oanda-account-id', oandaAccountId.trim());
+      } else {
+        window.localStorage.removeItem('trade:oanda-account-id');
       }
     } catch {
       // Storage is best-effort.
@@ -69,6 +107,36 @@ export function SettingsDialog({ onClose }: { onClose: () => void }): JSX.Elemen
           placeholder="••••••••"
         />
       </label>
+      <label className="field-label">
+        OANDA personal access token ({translate('requiresApiKey')})
+        <input
+          type="password"
+          value={oandaToken}
+          autoComplete="off"
+          onChange={(event) => {
+            setOandaToken(event.target.value);
+          }}
+          onBlur={saveOandaToken}
+          placeholder="••••••••"
+        />
+      </label>
+      <label className="field-label">
+        OANDA account ID (optional — blank means auto-discovered from the account list)
+        <input
+          type="text"
+          value={oandaAccountId}
+          autoComplete="off"
+          onChange={(event) => {
+            setOandaAccountId(event.target.value);
+          }}
+          onBlur={saveOandaAccountId}
+          placeholder="Leave blank to auto-discover"
+        />
+      </label>
+      <p className="dialog-note">
+        The OANDA token grants trading access to the practice account. It is stored only in
+        this browser&apos;s localStorage and must never be shared or committed.
+      </p>
       <p className="dialog-note">
         Keys are stored only in this browser&apos;s localStorage and are never sent anywhere
         except the provider&apos;s own API.

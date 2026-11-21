@@ -7,6 +7,8 @@ import { useApp } from '../store/state';
 
 const POLL_MS = 5000;
 const TWELVEDATA_KEY_STORAGE_KEY = 'trade:twelvedata-key';
+const OANDA_TOKEN_STORAGE_KEY = 'trade:oanda-token';
+const OANDA_ACCOUNT_ID_STORAGE_KEY = 'trade:oanda-account-id';
 
 /**
  * Providers whose tickers can only be reached via the proxy worker, which
@@ -19,6 +21,10 @@ interface RowPlan {
   provider: ProviderId;
   /** Twelve Data key, only set when the plan's provider needs one. */
   key: string | undefined;
+  /** OANDA token, only set when the plan's provider is OANDA. */
+  oandaToken: string | undefined;
+  /** OANDA account id, only set when the plan's provider is OANDA and one is stored. */
+  oandaAccountId: string | undefined;
 }
 
 function readTwelveDataKey(): string | undefined {
@@ -31,18 +37,47 @@ function readTwelveDataKey(): string | undefined {
   }
 }
 
+function readOandaToken(): string | undefined {
+  try {
+    const stored = window.localStorage.getItem(OANDA_TOKEN_STORAGE_KEY);
+    return stored !== null && stored.trim() !== '' ? stored : undefined;
+  } catch {
+    // Storage unavailable (private mode, quota): treat as "no token".
+    return undefined;
+  }
+}
+
+function readOandaAccountId(): string | undefined {
+  try {
+    const stored = window.localStorage.getItem(OANDA_ACCOUNT_ID_STORAGE_KEY);
+    return stored !== null && stored.trim() !== '' ? stored : undefined;
+  } catch {
+    // Storage unavailable (private mode, quota): treat as "no account id".
+    return undefined;
+  }
+}
+
 /**
  * First verified provider for a symbol that can serve a ticker from the
  * browser without a user key. Twelve Data is used only when its key is
- * stored; proxy-only providers are skipped outright. Returns null when no
- * provider qualifies — that row stays '—' rather than showing a fake price.
+ * stored; OANDA is used only when its token is stored; proxy-only
+ * providers are skipped outright. Returns null when no provider
+ * qualifies — that row stays '—' rather than showing a fake price.
  */
 function resolveRowPlan(symbolId: string): RowPlan | null {
   const key = readTwelveDataKey();
+  const oandaToken = readOandaToken();
+  const oandaAccountId = readOandaAccountId();
   for (const providerId of providersForSymbol(symbolId, true)) {
     if (PROXY_ONLY_PROVIDERS.includes(providerId)) continue;
     if (providerId === 'twelvedata' && key === undefined) continue;
-    return { provider: providerId, key: providerId === 'twelvedata' ? key : undefined };
+    if (providerId === 'oanda' && oandaToken === undefined) continue;
+    return {
+      provider: providerId,
+      key: providerId === 'twelvedata' ? key : undefined,
+      oandaToken: providerId === 'oanda' ? oandaToken : undefined,
+      oandaAccountId: providerId === 'oanda' ? oandaAccountId : undefined,
+    };
   }
   return null;
 }
@@ -90,7 +125,18 @@ export function Watchlist(): JSX.Element {
           seqRef.current[symbol.id] = seq;
           try {
             const options =
-              plan.key === undefined ? undefined : { keys: { twelvedata: plan.key } };
+              plan.provider === 'oanda' && plan.oandaToken !== undefined
+                ? {
+                    keys: {
+                      oanda: plan.oandaToken,
+                      ...(plan.oandaAccountId === undefined
+                        ? {}
+                        : { oandaAccountId: plan.oandaAccountId }),
+                    },
+                  }
+                : plan.key === undefined
+                  ? undefined
+                  : { keys: { twelvedata: plan.key } };
             const adapter = createAdapter(plan.provider, options);
             const ticker = await adapter.getTicker(symbol.id);
             if (!mounted || seqRef.current[symbol.id] !== seq) return;

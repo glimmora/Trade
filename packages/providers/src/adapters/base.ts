@@ -91,10 +91,11 @@ export function requireProviderSymbol(
 }
 
 export function requireKeys(keys: ProviderRuntimeKeys | undefined, name: string): string {
-  const key = name === 'twelvedata' ? keys?.twelvedata : undefined;
+  const key = name === 'twelvedata' ? keys?.twelvedata : name === 'oanda' ? keys?.oanda : undefined;
   if (key === undefined || key === '') {
+    const label = name === 'oanda' ? 'token' : 'key';
     throw new UnsupportedError(
-      'A user-supplied key is required for this provider. Enter it in Settings — it is stored only in localStorage, never in code.',
+      `A user-supplied ${label} is required for this provider. Enter it in Settings — it is stored only in localStorage, never in code.`,
     );
   }
   return key;
