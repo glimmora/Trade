@@ -284,6 +284,9 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
             lineWidth: toLineWidth(drawing.lineWidth, 1),
             lineStyle: toLineStyle(drawing.lineStyle),
             axisLabelVisible: true,
+            lineVisible: true,
+            axisLabelColor: drawing.color,
+            axisLabelTextColor: '#ffffff',
             title: drawing.title ?? drawing.text ?? '',
           });
           priceLinesRef.current.set(drawing.id, line);
