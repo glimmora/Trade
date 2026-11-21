@@ -8,7 +8,7 @@ import { useApp } from '../store/state';
  * a price once the store's lastPrice is set by a real provider update.
  */
 export function Watchlist(): JSX.Element {
-  const { state, translate, connection, setSymbol } = useApp();
+  const { state, translate, connection, lastPrice, setSymbol } = useApp();
   const connecting = connection === 'connecting' || connection === 'offline';
 
   return (
@@ -23,7 +23,7 @@ export function Watchlist(): JSX.Element {
       <ul className="watchlist">
         {SYMBOLS.map((symbol) => {
           const active = state.symbol === symbol.id;
-          const isCurrent = active && state.lastPrice !== null;
+          const isCurrent = active && lastPrice !== null;
           return (
             <li key={symbol.id}>
               <button
@@ -41,8 +41,8 @@ export function Watchlist(): JSX.Element {
                   </span>
                 </span>
                 <span className="watchlist-price">
-                  {isCurrent && state.lastPrice !== null
-                    ? state.lastPrice.toFixed(symbol.precision)
+                  {isCurrent && lastPrice !== null
+                    ? lastPrice.toFixed(symbol.precision)
                     : '—'}
                 </span>
                 <span className="watchlist-change">—</span>

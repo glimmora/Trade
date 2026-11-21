@@ -1,1 +1,28 @@
-{"dependencies":{"@trade/core":"workspace:*","zod":"^3.23.8"},"devDependencies":{"typescript":"^5.6.3","vitest":"^2.1.8"},"exports":{".":{"default":"./dist/index.js","types":"./dist/index.d.ts"}},"main":"./dist/index.js","name":"@trade/providers","private":true,"scripts":{"build":"tsc -b","lint":"eslint src","test":"vitest run","typecheck":"tsc --noEmit"},"type":"module","types":"./dist/index.d.ts","version":"0.1.0"}
+{
+  "dependencies": {
+    "@trade/core": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "name": "@trade/providers",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "0.1.0"
+}

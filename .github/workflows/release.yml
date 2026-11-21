@@ -30,7 +30,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then

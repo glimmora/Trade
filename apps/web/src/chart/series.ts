@@ -8,7 +8,9 @@ import type {
   IChartApi,
   IPriceLine,
   ISeriesApi,
+  SeriesType,
   LineData,
+  LineWidth,
   PriceLineOptions,
   UTCTimestamp,
 } from 'lightweight-charts';
@@ -59,9 +61,21 @@ export function toLineStyle(style: OverlayLineStyle | undefined): LineStyle {
   }
 }
 
+/**
+ * Clamp an arbitrary width to a valid library line width (1–4).
+ * LineWidth is a 1 | 2 | 3 | 4 union in lightweight-charts 4.2.3, so a
+ * plain number from a descriptor must be rounded and clamped, not cast.
+ */
+export function toLineWidth(value: number | undefined, fallback: LineWidth): LineWidth {
+  if (value === undefined || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(4, Math.max(1, Math.round(value))) as LineWidth;
+}
+
 function toCandlestickBar(candle: Candle): CandlestickData<UTCTimestamp> {
   return {
-    time: candle.time,
+    time: candle.time as UTCTimestamp,
     open: candle.open,
     high: candle.high,
     low: candle.low,
@@ -80,17 +94,17 @@ export function toBarData(candles: readonly Candle[]): BarData<UTCTimestamp>[] {
 }
 
 export function toLineData(candles: readonly Candle[]): LineData<UTCTimestamp>[] {
-  return candles.map((candle) => ({ time: candle.time, value: candle.close }));
+  return candles.map((candle) => ({ time: candle.time as UTCTimestamp, value: candle.close }));
 }
 
 export function toAreaData(candles: readonly Candle[]): AreaData<UTCTimestamp>[] {
-  return candles.map((candle) => ({ time: candle.time, value: candle.close }));
+  return candles.map((candle) => ({ time: candle.time as UTCTimestamp, value: candle.close }));
 }
 
 export function toBaselineData(
   candles: readonly Candle[],
 ): BaselineData<UTCTimestamp>[] {
-  return candles.map((candle) => ({ time: candle.time, value: candle.close }));
+  return candles.map((candle) => ({ time: candle.time as UTCTimestamp, value: candle.close }));
 }
 
 /**
@@ -126,9 +140,13 @@ export function computeHeikinAshi(candles: readonly Candle[]): Candle[] {
   return result;
 }
 
+// NOTE: the series parameter is typed as ISeriesApi<SeriesType> (the
+// library's own base type, which removeSeries accepts) rather than a
+// union of concrete series types, whose generic methods do not
+// assign cleanly under strict mode.
 function commonHandle(
   chart: IChartApi,
-  series: ISeriesApi<'Candlestick' | 'Bar' | 'Line' | 'Area' | 'Baseline'>,
+  series: ISeriesApi<SeriesType>,
   applyThemeImpl: (theme: ChartThemeName) => void,
   setDataImpl: (candles: readonly Candle[]) => void,
   updateImpl: (candle: Candle) => void,
@@ -200,7 +218,7 @@ export function createMainSeries(
         series.setData(toLineData(candles));
       },
       (candle) => {
-        series.update({ time: candle.time, value: candle.close });
+        series.update({ time: candle.time as UTCTimestamp, value: candle.close });
       },
     );
   }
@@ -230,7 +248,7 @@ export function createMainSeries(
         series.setData(toAreaData(candles));
       },
       (candle) => {
-        series.update({ time: candle.time, value: candle.close });
+        series.update({ time: candle.time as UTCTimestamp, value: candle.close });
       },
     );
   }
@@ -269,7 +287,7 @@ export function createMainSeries(
         series.setData(toBaselineData(candles));
       },
       (candle) => {
-        series.update({ time: candle.time, value: candle.close });
+        series.update({ time: candle.time as UTCTimestamp, value: candle.close });
       },
     );
   }
@@ -391,7 +409,7 @@ export function createOverlaySeries(
   if (descriptor.kind === 'line') {
     const series = chart.addLineSeries({
       color: descriptor.color,
-      lineWidth: descriptor.lineWidth ?? 2,
+      lineWidth: toLineWidth(descriptor.lineWidth, 2),
       lineStyle: toLineStyle(descriptor.lineStyle),
       priceLineVisible: false,
       lastValueVisible: false,
@@ -404,7 +422,10 @@ export function createOverlaySeries(
       setData: (data) => {
         series.setData(
           data.map(
-            (point): LineData<UTCTimestamp> => ({ time: point.time, value: point.value }),
+            (point): LineData<UTCTimestamp> => ({
+              time: point.time as UTCTimestamp,
+              value: point.value,
+            }),
           ),
         );
       },
@@ -419,7 +440,7 @@ export function createOverlaySeries(
       lineColor: descriptor.color,
       topColor: descriptor.color,
       bottomColor: 'transparent',
-      lineWidth: descriptor.lineWidth ?? 2,
+      lineWidth: toLineWidth(descriptor.lineWidth, 2),
       lineStyle: toLineStyle(descriptor.lineStyle),
       priceLineVisible: false,
       lastValueVisible: false,
@@ -432,7 +453,10 @@ export function createOverlaySeries(
       setData: (data) => {
         series.setData(
           data.map(
-            (point): AreaData<UTCTimestamp> => ({ time: point.time, value: point.value }),
+            (point): AreaData<UTCTimestamp> => ({
+              time: point.time as UTCTimestamp,
+              value: point.value,
+            }),
           ),
         );
       },
@@ -458,9 +482,9 @@ export function createOverlaySeries(
       series.setData(
         data.map((point): HistogramData<UTCTimestamp> => {
           if (point.color === undefined) {
-            return { time: point.time, value: point.value };
+            return { time: point.time as UTCTimestamp, value: point.value };
           }
-          return { time: point.time, value: point.value, color: point.color };
+          return { time: point.time as UTCTimestamp, value: point.value, color: point.color };
         }),
       );
     },

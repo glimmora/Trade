@@ -40,14 +40,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // Bundle-size budget: initial JS <= 250 KB gz. Indicators and
-    // drawings are code-split into lazy chunks (see src/App.tsx).
-    // Enforced in CI by the bundle-size check job.
+    // Bundle-size budget: initial JS <= 250 KB gz. Only the charting
+    // library chunk is lazy-loaded (ChartView via React.lazy in
+    // ChartHost); the rest is the initial bundle. Enforced in CI by the
+    // bundle-size check job, which excludes the lazy `charts` chunk.
     chunkSizeWarningLimit: 250,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'zustand'],
+          vendor: ['react', 'react-dom'],
           charts: ['lightweight-charts'],
         },
       },

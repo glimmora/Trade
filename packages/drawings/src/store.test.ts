@@ -25,8 +25,8 @@ import {
   setLocked,
   undoHistory,
   updateDrawing,
-} from '../store.js';
-import type { DrawingState } from '../store.js';
+} from './store.js';
+import type { DrawingState } from './store.js';
 
 const T0 = 1_700_000_000;
 

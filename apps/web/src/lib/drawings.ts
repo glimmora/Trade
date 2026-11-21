@@ -36,7 +36,7 @@ export const DRAWING_TOOLS: readonly DrawingTool[] = [
   { id: 'long-position', label: 'Long position', shortcut: 'L', group: 'position' },
   { id: 'short-position', label: 'Short position', shortcut: 'S', group: 'position' },
   { id: 'anchored-vwap', label: 'Anchored VWAP', shortcut: null, group: 'position' },
-  { id: 'text', label: 'Text note', shortcut: 'X', group: 'annotations' },
+  { id: 'text-label', label: 'Text note', shortcut: 'X', group: 'annotations' },
   { id: 'price-label', label: 'Price label', shortcut: null, group: 'annotations' },
   { id: 'price-range', label: 'Price range', shortcut: null, group: 'annotations' },
   { id: 'date-range', label: 'Date range', shortcut: null, group: 'annotations' },
@@ -105,7 +105,7 @@ export function toolGlyph(id: string): string {
       return 'S↓';
     case 'anchored-vwap':
       return 'V⚓';
-    case 'text':
+    case 'text-label':
       return 'T';
     case 'price-label':
       return '$';

@@ -13,7 +13,7 @@ import type { ProviderId } from '@trade/core';
  * larger gap usually means a stale feed or a wrong instrument.
  */
 
-export type InstrumentKind = 'crypto' | 'gold';
+export type CrosscheckKind = 'crypto' | 'gold';
 
 export interface PriceSample {
   provider: ProviderId;
@@ -34,7 +34,7 @@ export interface PriceDeviation {
 
 export interface CrossCheckWarning {
   symbol: string;
-  kind: InstrumentKind;
+  kind: CrosscheckKind;
   thresholdPct: number;
   referencePrice: number;
   maxDeviationPct: number;
@@ -45,7 +45,7 @@ export interface CrossCheckWarning {
 
 export interface CrossCheckResult {
   symbol: string;
-  kind: InstrumentKind;
+  kind: CrosscheckKind;
   thresholdPct: number;
   referencePrice: number;
   maxDeviationPct: number;
@@ -54,7 +54,7 @@ export interface CrossCheckResult {
   warning?: CrossCheckWarning;
 }
 
-export function thresholdForKind(kind: InstrumentKind): number {
+export function thresholdForKind(kind: CrosscheckKind): number {
   return kind === 'gold' ? 0.0015 : 0.003;
 }
 
@@ -77,7 +77,7 @@ export function median(values: readonly number[]): number {
  */
 export function crossCheckPrices(
   symbol: string,
-  kind: InstrumentKind,
+  kind: CrosscheckKind,
   samples: readonly PriceSample[],
 ): CrossCheckResult {
   const thresholdPct = thresholdForKind(kind);

@@ -130,4 +130,5 @@ export const en = {
   settingsPlaceholder: 'Settings for this indicator will appear here.',
 } as const;
 
-export type Dict = typeof en;
+/** Dictionary type: same keys as the English dictionary, plain strings. */
+export type Dict = { [K in keyof typeof en]: string };

@@ -5,6 +5,7 @@ import type { PriceScaleKind } from '../chart/types';
 import { t } from '../i18n';
 import type { DictKey, Language } from '../i18n';
 import { firstProviderForSymbol } from '../lib/providers';
+import { catalogEntry } from '../lib/indicators';
 import { playAlertSound } from '../lib/sound';
 import { uid } from '../lib/utils';
 
@@ -455,6 +456,9 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       addIndicator: (kind: string) => {
         setState((prev) => {
           if (prev.indicators.length >= 20) return prev;
+          // Use the catalog defaults for this kind (e.g. SMA 50, EMA 20)
+          // instead of a blanket period of 14.
+          const entry = catalogEntry(kind);
           return {
             ...prev,
             indicators: [
@@ -463,8 +467,8 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
                 id: uid('ind'),
                 kind,
                 visible: true,
-                period: 14,
-                color: '#2563eb',
+                period: entry?.defaultPeriod ?? 14,
+                color: entry?.defaultColor ?? '#2563eb',
                 lineWidth: 1,
               },
             ],

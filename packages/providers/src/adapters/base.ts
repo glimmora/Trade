@@ -37,7 +37,10 @@ export class RestClient {
     return retryWithBackoff(async () => {
       let response: Response;
       try {
-        response = await this.fetchFn(url, { headers: options.headers });
+        response = await this.fetchFn(
+          url,
+          options.headers === undefined ? undefined : { headers: options.headers },
+        );
       } catch (error) {
         throw new Error(`Network error fetching ${new URL(url).hostname}: ${(error as Error).message}`);
       }
@@ -57,7 +60,10 @@ export class RestClient {
 
   async fetchText(url: string, options: FetchJsonOptions = {}): Promise<string> {
     return retryWithBackoff(async () => {
-      const response = await this.fetchFn(url, { headers: options.headers });
+      const response = await this.fetchFn(
+        url,
+        options.headers === undefined ? undefined : { headers: options.headers },
+      );
       if (response.status === 429) {
         const retryAfter = parseRetryAfter(
           response.headers.get('Retry-After'),

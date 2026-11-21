@@ -2,7 +2,7 @@ import { normalizeCandles } from '../normalize';
 import { providerSymbolFor } from '../registry';
 import type { CandleRequest, ProviderAdapter, ProviderClientOptions, Ticker, TickHandler } from '../types';
 import { RestClient, intervalFor, requireProviderSymbol } from './base';
-import type { Timeframe } from '@trade/core';
+import type { Candle, Timeframe } from '@trade/core';
 import { z } from 'zod';
 
 /**

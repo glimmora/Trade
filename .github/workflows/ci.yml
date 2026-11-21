@@ -69,7 +69,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       # NOTE: pnpm-lock.yaml is generated in CI by the
       # "Bootstrap pnpm lockfile" workflow; until it exists, installs run
       # without --frozen-lockfile and warn in the run summary.
@@ -115,7 +128,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -161,7 +187,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -172,7 +211,11 @@ jobs:
             echo "pnpm-lock.yaml was missing; dependencies were installed without --frozen-lockfile. Run the 'Bootstrap pnpm lockfile' workflow to commit a lockfile." >> "$GITHUB_STEP_SUMMARY"
             pnpm install
           fi
-      - run: pnpm test -- --coverage
+      # NOTE: no --coverage flag here -- turbo passes it to every package's
+      # vitest, but @vitest/coverage-v8 is only installed in indicators and
+      # core/web/proxy have no test files at all. Coverage is measured by
+      # the advisory gate below, scoped to indicators + providers.
+      - run: pnpm test
       - name: Coverage gate (>= 85% on indicators & providers)
         run: |
           pnpm exec vitest run --coverage --coverage.thresholds.lines=85 \
@@ -183,7 +226,9 @@ jobs:
     name: Build + bundle budget
     runs-on: ubuntu-latest
     needs: [changes, setup]
-    if: needs.changes.outputs.web == 'true'
+    # e2e needs the dist artifact, so the build must also run when only
+    # e2e files changed (otherwise e2e is skipped with its dependency).
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.e2e == 'true'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -194,7 +239,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -213,15 +271,25 @@ jobs:
             const path = require('path');
             const { gzipSync } = require('zlib');
             const dir = 'apps/web/dist/assets';
+            // The budget is INITIAL JS only (spec: <= 250 KB gz). The
+            // `charts` manual chunk is lazy-loaded via React.lazy, so it
+            // is excluded from the initial sum and reported separately.
             let total = 0;
+            let lazy = 0;
             for (const f of fs.readdirSync(dir)) {
               if (!f.endsWith('.js')) continue;
               const gz = gzipSync(fs.readFileSync(path.join(dir, f))).length;
+              if (f.startsWith('charts-')) {
+                console.log(f, (gz / 1024).toFixed(1) + ' KB gz (lazy chunk, excluded)');
+                lazy += gz;
+                continue;
+              }
               console.log(f, (gz / 1024).toFixed(1) + ' KB gz');
               total += gz;
             }
-            console.log('Total JS gz: ' + (total / 1024).toFixed(1) + ' KB');
-            if (total > 250 * 1024) { console.error('Bundle budget exceeded'); process.exit(1); }
+            console.log('Initial JS gz: ' + (total / 1024).toFixed(1) + ' KB');
+            console.log('Lazy JS gz (excluded): ' + (lazy / 1024).toFixed(1) + ' KB');
+            if (total > 250 * 1024) { console.error('Initial-JS bundle budget exceeded'); process.exit(1); }
           "
       - name: Upload dist
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -249,7 +317,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: pnpm
+      # pnpm store cache (NOT setup-node's `cache: pnpm`: that step fails
+      # when pnpm-lock.yaml is absent because its lockfile glob matches
+      # nothing). hashFiles() on a missing lockfile yields an empty hash,
+      # which is a plain cache miss -- never a failure.
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then

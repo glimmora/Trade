@@ -80,7 +80,8 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
   {
     id: 'gate',
     label: 'Gate.io',
-    timeframes: ALL_TIMEFRAMES,
+    // Registry serves 8 timeframes (no 3m/6h/12h/1W/1M).
+    timeframes: ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1D'],
     note: null,
     requiresKey: false,
     delayed: false,
@@ -88,7 +89,8 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
   {
     id: 'twelvedata',
     label: 'Twelve Data',
-    timeframes: ALL_TIMEFRAMES,
+    // Registry serves 10 timeframes (no 3m/6h/12h).
+    timeframes: ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1D', '1W', '1M'],
     note: 'requiresApiKey',
     requiresKey: true,
     delayed: false,
@@ -104,7 +106,8 @@ export const PROVIDER_META: readonly ProviderMeta[] = [
   {
     id: 'stooq',
     label: 'Stooq',
-    timeframes: ['1D', '1W', '1M'],
+    // Registry serves daily candles only.
+    timeframes: ['1D'],
     note: 'delayedData',
     requiresKey: false,
     delayed: true,

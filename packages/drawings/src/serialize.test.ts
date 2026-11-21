@@ -3,8 +3,8 @@ import {
   deserializeDrawings,
   migrateDrawingsFile,
   serializeDrawings,
-} from '../serialize.js';
-import { createDrawingObject } from '../types.js';
+} from './serialize.js';
+import { createDrawingObject } from './types.js';
 
 const T0 = 1_700_000_000;
 

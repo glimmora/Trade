@@ -20,9 +20,9 @@ import {
   rotateDrawing,
   segmentsIntersect,
   snapToOHLC,
-} from '../geometry.js';
-import type { CandleLike, ChartScale } from '../geometry.js';
-import { createDrawingObject } from '../types.js';
+} from './geometry.js';
+import type { CandleLike, ChartScale } from './geometry.js';
+import { createDrawingObject } from './types.js';
 
 const T0 = 1_700_000_000;
 

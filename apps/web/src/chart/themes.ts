@@ -1,5 +1,5 @@
-import { ColorType, CrosshairMode } from 'lightweight-charts';
-import type { ChartOptions } from 'lightweight-charts';
+import { ColorType, CrosshairMode, LineStyle, PriceScaleMode, TrackingModeExitMode } from 'lightweight-charts';
+import type { ChartOptions, PriceScaleOptions } from 'lightweight-charts';
 import type { ChartThemeName, ChartType } from './types';
 
 /**
@@ -70,6 +70,22 @@ export function chartOptionsForTheme(
   height: number,
 ): ChartOptions {
   const palette = CHART_PALETTES[theme];
+  // Full price-scale options, shared by the left, right and overlay
+  // scales. The library requires every field of PriceScaleOptions, so the
+  // object is built once here instead of repeating the literal.
+  const priceScale: PriceScaleOptions = {
+    autoScale: true,
+    mode: PriceScaleMode.Normal,
+    invertScale: false,
+    alignLabels: true,
+    borderVisible: true,
+    borderColor: palette.border,
+    entireTextOnly: false,
+    visible: true,
+    ticksVisible: true,
+    scaleMargins: { top: 0.1, bottom: 0.1 },
+    minimumWidth: 0,
+  };
   return {
     width,
     height,
@@ -79,31 +95,86 @@ export function chartOptionsForTheme(
       textColor: palette.text,
       fontSize: 12,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      attributionLogo: true,
     },
     grid: {
-      vertLines: { color: palette.grid },
-      horzLines: { color: palette.grid },
+      vertLines: { color: palette.grid, style: LineStyle.Solid, visible: true },
+      horzLines: { color: palette.grid, style: LineStyle.Solid, visible: true },
     },
     crosshair: {
       mode: CrosshairMode.Normal,
       vertLine: {
         color: palette.crosshair,
         labelBackgroundColor: palette.crosshair,
+        style: LineStyle.Solid,
+        width: 1,
+        visible: true,
+        labelVisible: true,
       },
       horzLine: {
         color: palette.crosshair,
         labelBackgroundColor: palette.crosshair,
+        style: LineStyle.Solid,
+        width: 1,
+        visible: true,
+        labelVisible: true,
       },
     },
-    rightPriceScale: {
-      borderColor: palette.border,
-    },
+    leftPriceScale: { ...priceScale, visible: false },
+    rightPriceScale: priceScale,
+    overlayPriceScales: priceScale,
     timeScale: {
       borderColor: palette.border,
       timeVisible: true,
       secondsVisible: false,
       rightOffset: 6,
       barSpacing: 9,
+      minBarSpacing: 0.5,
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      lockVisibleTimeRangeOnResize: false,
+      rightBarStaysOnScroll: false,
+      borderVisible: true,
+      visible: true,
+      shiftVisibleRangeOnNewBar: false,
+      allowShiftVisibleRangeOnWhitespaceReplacement: false,
+      ticksVisible: false,
+      uniformDistribution: false,
+      minimumHeight: 0,
+      allowBoldLabels: true,
+    },
+    watermark: {
+      color: 'rgba(0, 0, 0, 0)',
+      visible: false,
+      text: '',
+      fontSize: 48,
+      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontStyle: '',
+      horzAlign: 'center',
+      vertAlign: 'center',
+    },
+    handleScroll: {
+      mouseWheel: true,
+      pressedMouseMove: true,
+      horzTouchDrag: true,
+      vertTouchDrag: true,
+    },
+    handleScale: {
+      mouseWheel: true,
+      pinch: true,
+      axisPressedMouseMove: true,
+      axisDoubleClickReset: true,
+    },
+    kineticScroll: {
+      touch: true,
+      mouse: false,
+    },
+    trackingMode: {
+      exitMode: TrackingModeExitMode.OnNextTap,
+    },
+    localization: {
+      locale: typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-US',
+      dateFormat: "dd MMM 'yy",
     },
   };
 }

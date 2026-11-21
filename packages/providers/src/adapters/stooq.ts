@@ -2,7 +2,7 @@ import { normalizeCandles } from '../normalize';
 import { providerSymbolFor } from '../registry';
 import type { CandleRequest, ProviderAdapter, ProviderClientOptions, Ticker } from '../types';
 import { RestClient, requireProviderSymbol } from './base';
-import type { Timeframe } from '@trade/core';
+import type { Candle, Timeframe } from '@trade/core';
 
 /**
  * Stooq CSV (stooq.com/q/d/l/) — free, no key, DAILY data only.

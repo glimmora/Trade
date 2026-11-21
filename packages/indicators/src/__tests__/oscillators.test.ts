@@ -156,7 +156,7 @@ describe('volume indicators', () => {
       candle(12, 14, 12, 14, 100, 1),
     ];
     const ad = accumulationDistribution(candles);
-    expect(ad[1]).toBeGreaterThan(ad[0]);
+    expect(ad[1]).toBeGreaterThan(ad[0] as number);
   });
   it('awesome oscillator is defined after 34 bars', () => {
     const candles = closesToCandles(Array.from({ length: 40 }, (_, i) => 100 + i * 0.5));

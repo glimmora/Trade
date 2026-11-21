@@ -14,6 +14,7 @@ import {
   createMainSeries,
   createOverlaySeries,
   toLineStyle,
+  toLineWidth,
 } from './series';
 import type { MainSeriesHandle, OverlayHandle } from './series';
 import { chartOptionsForTheme } from './themes';
@@ -280,7 +281,7 @@ export const ChartView = forwardRef<ChartHandle, ChartViewProps>(function ChartV
           const line = series.createPriceLine({
             price: drawing.price,
             color: drawing.color,
-            lineWidth: drawing.lineWidth ?? 1,
+            lineWidth: toLineWidth(drawing.lineWidth, 1),
             lineStyle: toLineStyle(drawing.lineStyle),
             axisLabelVisible: true,
             title: drawing.title ?? drawing.text ?? '',

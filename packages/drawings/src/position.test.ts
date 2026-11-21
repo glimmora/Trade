@@ -4,7 +4,7 @@ import {
   calculatePositionFromData,
   formatRiskReward,
   measureBetween,
-} from '../position.js';
+} from './position.js';
 
 describe('calculatePosition', () => {
   it('computes a 1:2 long setup', () => {
