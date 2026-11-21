@@ -126,7 +126,9 @@ export default {
 
     const ttl = cacheTtlSeconds(targetUrl);
     const cacheKey = new Request(targetUrl.toString(), { method: 'GET' });
-    const cache = caches.default;
+    // Cloudflare Workers exposes `caches.default`; the DOM lib used by
+    // tsc does not declare it, so reach it through a narrow cast.
+    const cache = (caches as unknown as { default: Cache }).default;
     const cached = await cache.match(cacheKey);
     if (cached !== undefined) {
       const headers = new Headers(cached.headers);
