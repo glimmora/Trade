@@ -209,7 +209,10 @@ jobs:
       # vitest, but @vitest/coverage-v8 is only installed in indicators and
       # core/web/proxy have no test files at all. Coverage is measured by
       # the advisory gate below, scoped to indicators + providers.
-      - run: pnpm test
+      # e2e runs in its own job against the built dist; turbo would run
+      # its Playwright suite here too, and its preview server fails
+      # without a build. Unit tests are the vitest suites only.
+      - run: pnpm exec turbo run test --filter=!@trade/e2e
       - name: Coverage gate (>= 85% on indicators & providers)
         run: |
           pnpm exec vitest run --coverage --coverage.thresholds.lines=85 \
@@ -336,7 +339,7 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm --filter @trade/e2e exec playwright install --with-deps chromium webkit
       - name: Download dist
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -383,6 +386,13 @@ jobs:
           path: apps/web/dist
       - name: Serve preview
         run: pnpm dlx serve -l 4173 apps/web/dist &
+      - name: Wait for preview server
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:4173/ >/dev/null && break
+            sleep 1
+          done
+          curl -fsS http://localhost:4173/ >/dev/null
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:

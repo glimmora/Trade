@@ -52,16 +52,6 @@ function isRateLimited(clientIp: string, nowMs: number): boolean {
   return bucket.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
-function redactUrl(url: URL): string {
-  const copy = new URL(url.toString());
-  for (const key of [...copy.searchParams.keys()]) {
-    if (/apikey|api_key|token|key/i.test(key)) {
-      copy.searchParams.set(key, '[redacted]');
-    }
-  }
-  return copy.toString();
-}
-
 function isDailyPath(pathname: string): boolean {
   return pathname.includes('/q/d/l/') || pathname.includes('interval=1d') || pathname.includes('interval=1D');
 }
@@ -163,7 +153,7 @@ export default {
 
     const headers = new Headers(response.headers);
     headers.set('access-control-allow-origin', '*');
-    headers.set('cache-control', `public, max-age=${ttl}`);
+    headers.set('cache-control', `public, max-age=${String(ttl)}`);
     headers.set('x-proxy-cache', 'MISS');
     // Strip headers that could leak upstream internals.
     headers.delete('set-cookie');
